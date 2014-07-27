@@ -20,6 +20,10 @@
 #define HAL_BOARD_VRBRAIN  8
 #define HAL_BOARD_EMPTY    99
 
+//CHM - For VS code reading
+#ifdef _DEBUG
+#define CONFIG_HAL_BOARD HAL_BOARD_PX4
+#endif
 
 /**
    HAL Linux sub-types
