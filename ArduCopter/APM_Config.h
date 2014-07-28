@@ -35,10 +35,11 @@
 //#define PARACHUTE             ENABLED             // enable parachute release at a cost of 1k of flash
 
 // features below are disabled by default on all boards
-//#define OPTFLOW               ENABLED             // enable optical flow sensor and OF_LOITER flight mode at a cost of 5K of flash space
+// CHM - this is the code that enable OPTFLOW globally!!!
+#define OPTFLOW               ENABLED             // enable optical flow sensor and OF_LOITER flight mode at a cost of 5K of flash space
 //#define SPRAYER               ENABLED             // enable the crop sprayer feature (two ESC controlled pumps the speed of which depends upon the vehicle's horizontal velocity)
 //#define EPM_ENABLED           ENABLED             // enable epm cargo gripper costs 500bytes of flash
-//#define NAV_GUIDED            ENABLED             // enable external navigation computer to control vehicle through MAV_CMD_NAV_GUIDED mission commands
+#define NAV_GUIDED            ENABLED             // enable external navigation computer to control vehicle through MAV_CMD_NAV_GUIDED mission commands
 
 // other settings
 //#define THROTTLE_IN_DEADBAND   100                // redefine size of throttle deadband in pwm (0 ~ 1000)
@@ -56,3 +57,6 @@
 //#define USERHOOK_MEDIUMLOOP userhook_MediumLoop();        // for code to be run at 10hz
 //#define USERHOOK_SLOWLOOP userhook_SlowLoop();            // for code to be run at 3.3hz
 //#define USERHOOK_SUPERSLOWLOOP userhook_SuperSlowLoop();  // for code to be run at 1hz
+
+// CHM - added safety
+# define FAILSAFE_GPS_TIMEOUT_MS       2000    // gps failsafe triggers after 2 seconds with no GPS
