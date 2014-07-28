@@ -471,6 +471,7 @@ static void Log_Write_Attitude()
     get_angle_targets_for_reporting(targets);
     struct log_Attitude pkt = {
         LOG_PACKET_HEADER_INIT(LOG_ATTITUDE_MSG),
+		// CHM - where the attitude infomation in the datalog came from
         time_ms         : hal.scheduler->millis(),
         control_roll    : (int16_t)targets.x,
         roll            : (int16_t)ahrs.roll_sensor,

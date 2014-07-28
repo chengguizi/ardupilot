@@ -71,8 +71,13 @@ static void auto_run()
         auto_spline_run();
         break;
 
+// CHM - NAV_GUIDED is not a mode, it is a sub-mode inside AUTO mode
+// How are the sub-modes triggered?
+// It is triggered in commands_logic: MAVlink CMDs. 
+//"case MAV_CMD_NAV_GUIDED"                    // 90  accept navigation commands from external nav computer
 #if NAV_GUIDED == ENABLED
     case Auto_NavGuided:
+		// CHM - it calls the SAME function as GUIDED mode, guided_run()
         auto_nav_guided_run();
         break;
 #endif

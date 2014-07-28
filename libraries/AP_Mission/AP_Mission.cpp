@@ -879,6 +879,7 @@ void AP_Mission::complete()
 ///     do command will also be loaded
 ///     accounts for do-jump commands
 //      returns true if command is advanced, false if failed (i.e. mission completed)
+// CHM - this function will also run when the AUTO mode is just engaged. So it set the initial AUTO sub-mode
 bool AP_Mission::advance_current_nav_cmd()
 {
     Mission_Command cmd;

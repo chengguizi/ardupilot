@@ -41,6 +41,7 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] PROGMEM = {
     // @Units: Centi-Degrees/Sec/Sec
     // @Values: 36000:Very Soft, 54000:Soft, 90000:Medium, 126000:Crisp, 162000:Very Crisp
     // @User: Advanced
+	// @CHM: the parameter that used in stabilize_run()
     AP_GROUPINFO("ACCEL_RP_MAX", 3, AC_AttitudeControl, _accel_rp_max, AC_ATTITUDE_CONTROL_ACCEL_RP_MAX_DEFAULT),
 
     // @Param: ACCEL_Y_MAX
@@ -96,8 +97,14 @@ void AC_AttitudeControl::angle_ef_roll_pitch_rate_ef_yaw_smooth(float roll_angle
     float rate_change_limit;
 
     // sanity check smoothing gain
+	// CHM - smoothing_gain = rc_feel_rp = parameter 'RC_FEEL_RP'
+	// Values: 0:Very Soft, 25:Soft, 50:Medium, 75:Crisp, 100:Very Crisp
     smoothing_gain = constrain_float(smoothing_gain,1.0f,50.0f);
 
+	// CHM - _accel_rp_max is 'ACCEL_RP_MAX', the greater the crisper
+	// Values: 36000:Very Soft, 54000:Soft, 90000:Medium, 126000:Crisp, 162000:Very Crisp
+	// DisplayName: Acceleration Max for Roll/Pitch
+	// but unit???
     float linear_angle = _accel_rp_max/(smoothing_gain*smoothing_gain);
     rate_change_limit = _accel_rp_max * _dt;
     float rate_ef_desired;
@@ -114,6 +121,7 @@ void AC_AttitudeControl::angle_ef_roll_pitch_rate_ef_yaw_smooth(float roll_angle
     	} else {
     		rate_ef_desired = smoothing_gain*angle_to_target;
     	}
+		// CHM - limit the '_rate_ef_desired' so it do not change so fast (range of -rate_change_limit ~ +rate_change_limit)
     	_rate_ef_desired.x = constrain_float(rate_ef_desired, _rate_ef_desired.x-rate_change_limit, _rate_ef_desired.x+rate_change_limit);
 
     	// update earth-frame roll angle target using desired roll rate

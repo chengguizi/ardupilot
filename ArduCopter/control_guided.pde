@@ -17,6 +17,7 @@ static bool guided_init(bool ignore_checks)
         // initialise yaw
         set_auto_yaw_mode(get_default_auto_yaw_mode(false));
         // start in position control mode
+		// CHM - by default, GUIDED mode is started in pos control mode
         guided_pos_control_start();
         return true;
     }else{

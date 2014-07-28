@@ -767,6 +767,8 @@ AP_Param param_loader(var_info, MISSION_START_BYTE);
   4000 = 0.1hz
   
  */
+
+// CHM - list of loops
 static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
     { rc_loop,               4,     10 },
     { throttle_loop,         8,     45 },
@@ -961,6 +963,7 @@ void loop()
 
 
 // Main loop - 100hz
+// CHM - this is 400hz for Pixhawk
 static void fast_loop()
 {
 

@@ -195,6 +195,7 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @Description: Determines how the autopilot controls the yaw during missions and RTL
     // @Values: 0:Never change yaw, 1:Face next waypoint, 2:Face next waypoint except RTL, 3:Face along GPS course
     // @User: Standard
+	// CHM - this should be set to 0, for safty reason. or at least 3
     GSCALAR(wp_yaw_behavior,  "WP_YAW_BEHAVIOR",    WP_YAW_BEHAVIOR_DEFAULT),
 
     // @Param: RTL_LOIT_TIME
