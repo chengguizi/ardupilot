@@ -88,3 +88,5 @@ Thumbs.db
 ArduCopter/Visual Micro/
 Ardupilot/
 ArduCopter/resource.h
+hardware/
+ArduCopter/ArduCopter.opensdf
