@@ -1220,6 +1220,7 @@ static void update_GPS(void)
 
             // log GPS message
             if (g.log_bitmask & MASK_LOG_GPS) {
+				// CHM - the place where GPS is being logged
                 DataFlash.Log_Write_GPS(gps, i, current_loc.alt);
             }
 
@@ -1230,6 +1231,7 @@ static void update_GPS(void)
     if (gps_updated) {
         // run glitch protection and update AP_Notify if home has been initialised
         if (ap.home_is_set) {
+			// CHM - check for glitch
             gps_glitch.check_position();
             report_gps_glitch = (gps_glitch.glitching() && !ap.usb_connected && hal.util->safety_switch_state() != AP_HAL::Util::SAFETY_DISARMED);
             if (AP_Notify::flags.gps_glitching != report_gps_glitch) {
@@ -1289,6 +1291,7 @@ static void update_GPS(void)
     }
 
     // check for loss of gps
+	// CHM - the function to trigger failsafe, 50hz
     failsafe_gps_check();
 }
 

@@ -288,6 +288,10 @@ static void Log_Write_Nav_Tuning()
     const Vector3f &position = inertial_nav.get_position();
     const Vector3f &velocity = inertial_nav.get_velocity();
 
+	// CHM - This is where position logs are gathered
+	// _pos_target
+	// _vel_target
+	// _accel_target
     struct log_Nav_Tuning pkt = {
         LOG_PACKET_HEADER_INIT(LOG_NAV_TUNING_MSG),
         time_ms         : hal.scheduler->millis(),

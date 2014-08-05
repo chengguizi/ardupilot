@@ -47,6 +47,11 @@ static void loiter_run()
         update_simple_mode();
 
         // process pilot's roll and pitch input
+		// CHM - set  _pilot_accel_fwd_cms, _pilot_accel_rgt_cms
+		// it assumes the control_in range is +-4500. TAKE NOTE
+		// This does not matter, because in any case the control_in angle is not used to directly command the UAV
+		// instead it provide the disired acceleration
+		// the output value is a fraction of _loiter_accel_cms = 0.5*_loiter_speed_cms = 0.5*LOIT_SPEED (maximum horizontal speed during loiter)
         wp_nav.set_pilot_desired_acceleration(g.rc_1.control_in, g.rc_2.control_in);
 
         // get pilot's desired yaw rate
@@ -69,15 +74,25 @@ static void loiter_run()
 
     // when landed reset targets and output zero throttle
     if (ap.land_complete) {
+		// CHM - set default max speed and max acceleration
+		// set target position to current one
+		// set desired velocity to current one
+		// set desired acceleration according to current speed
+		// set pilot accel to 0
         wp_nav.init_loiter_target();
         attitude_control.relax_bf_rate_controller();
         attitude_control.set_yaw_target_to_current_heading();
         attitude_control.set_throttle_out(0, false);
     }else{
         // run loiter controller
+		// CHM -  update _vel_desired , in lat/lon at 50hz
+		// _pos_control.update_xy_controller(true); at ~400hz?
+		// The final output is _roll_target, at 50hz
         wp_nav.update_loiter();
 
         // call attitude controller
+		// CHM - wp_nav.get_roll() == _roll_target
+		// output _rate_bf_target
         attitude_control.angle_ef_roll_pitch_rate_ef_yaw(wp_nav.get_roll(), wp_nav.get_pitch(), target_yaw_rate);
 
         // body-frame rate controller is run directly from 100hz loop

@@ -547,9 +547,12 @@ void AC_PosControl::update_xy_controller(bool use_desired_velocity)
     }
 
     // check if xy leash needs to be recalculated
+	// CHM - run at 400hz, set _leash if _flags.recalc_leash_xy
+	// WHAT IT DOES?????
     calc_leash_length_xy();
 
     // reset step back to 0 if loiter or waypoint parents have triggered an update and we completed the last full cycle
+	// CHM - this IF statement make sure that the loiter steps still run at 50 hz, not 400.
     if (_flags.force_recalc_xy && _xy_step > 3) {
         _flags.force_recalc_xy = false;
         _xy_step = 0;
@@ -563,21 +566,29 @@ void AC_PosControl::update_xy_controller(bool use_desired_velocity)
             _last_update_xy_ms = now;
 
             // translate any adjustments from pilot to loiter target
+			//CHM - set _pos_target.x += _vel_desired.x * nav_dt;
+			//set _pos_target.y += _vel_desired.y * nav_dt;
+			// Logged as  DPosX, DPosY
             desired_vel_to_pos(_dt_xy);
             _xy_step++;
             break;
         case 1:
             // run position controller's position error to desired velocity step
+			// CHM - set _vel_target
+			// Logged as DVelX, DVelY
             pos_to_rate_xy(use_desired_velocity,_dt_xy);
             _xy_step++;
             break;
         case 2:
             // run position controller's velocity to acceleration step
+			// CHM - this is where the LOITER_LON_ and LOITER_LAT_ PID used. the greater, the more responsive
+			// towards velocity difference
             rate_to_accel_xy(_dt_xy);
             _xy_step++;
             break;
         case 3:
             // run position controller's acceleration to lean angle step
+			// CHM - output _roll_target _pitch_targe
             accel_to_lean_angles();
             _xy_step++;
             break;
@@ -668,6 +679,8 @@ void AC_PosControl::update_vel_controller_xyz()
 void AC_PosControl::calc_leash_length_xy()
 {
     if (_flags.recalc_leash_xy) {
+		// _p_pos_xy.kP() looks like P value of position
+		// it is defined in HLD_LAT_P, defualt 1.0
         _leash = calc_leash_length(_speed_cms, _accel_cms, _p_pos_xy.kP());
         _flags.recalc_leash_xy = false;
     }
@@ -697,6 +710,7 @@ void AC_PosControl::desired_vel_to_pos(float nav_dt)
 ///         velocity due to position error is reduce to a maximum of 1m/s
 void AC_PosControl::pos_to_rate_xy(bool use_desired_rate, float dt)
 {
+	// CHM - This is how APM get current position, need to dig further
     Vector3f curr_pos = _inav.get_position();
     float linear_distance;      // the distance we swap between linear and sqrt velocity response
     float kP = _p_pos_xy.kP();
@@ -707,6 +721,7 @@ void AC_PosControl::pos_to_rate_xy(bool use_desired_rate, float dt)
         _vel_target.y = 0.0f;
     }else{
         // calculate distance error
+		// CHM - _pos_target is acquired during case 0
         _pos_error.x = _pos_target.x - curr_pos.x;
         _pos_error.y = _pos_target.y - curr_pos.y;
 
@@ -722,6 +737,9 @@ void AC_PosControl::pos_to_rate_xy(bool use_desired_rate, float dt)
         }
 
         // calculate the distance at which we swap between linear and sqrt velocity response
+		// CHM - higher the gain, lower the linear distance
+		// CHM - important discovery, by math analysis:
+		// in linear region, the gradient is kP, after 2 linear_distance, the gradient gradually decrease
         linear_distance = _accel_cms/(2.0f*kP*kP);
 
         if (_distance_to_target > 2.0f*linear_distance) {
@@ -754,6 +772,7 @@ void AC_PosControl::pos_to_rate_xy(bool use_desired_rate, float dt)
 
         // add desired velocity (i.e. feed forward).
         if (use_desired_rate) {
+			// CHM - This means that in loiter mode, pilot control is much more sensitive thant position control
             _vel_target.x += _vel_desired.x;
             _vel_target.y += _vel_desired.y;
         }
@@ -764,6 +783,7 @@ void AC_PosControl::pos_to_rate_xy(bool use_desired_rate, float dt)
 ///    converts desired velocities in lat/lon directions to accelerations in lat/lon frame
 void AC_PosControl::rate_to_accel_xy(float dt)
 {
+	// CHM - this is the actual current velocity of the UAV
     const Vector3f &vel_curr = _inav.get_velocity();  // current velocity in cm/s
     float accel_total;                          // total acceleration in cm/s/s
     float lat_i, lon_i;
@@ -778,6 +798,9 @@ void AC_PosControl::rate_to_accel_xy(float dt)
     // feed forward desired acceleration calculation
     if (dt > 0.0f) {
     	if (!_flags.freeze_ff_xy) {
+			// CHM - It is called feedforward, because it does not use a feedback from the actual velocity yet
+			// instead, it calculate the change in commanded velocity, and feed (add )the commanded acceleration 
+			// to the final acceleration command
     		_accel_feedforward.x = (_vel_target.x - _vel_last.x)/dt;
     		_accel_feedforward.y = (_vel_target.y - _vel_last.y)/dt;
         } else {
@@ -810,6 +833,7 @@ void AC_PosControl::rate_to_accel_xy(float dt)
     }
 
     // combine feed forward accel with PID output from velocity error
+	// CHM - feed forward is used, from measuring the accelerating of commanded velocity, speeding up the response
     _accel_target.x = _accel_feedforward.x + _pid_rate_lat.get_p(_vel_error.x) + lat_i + _pid_rate_lat.get_d(_vel_error.x, dt);
     _accel_target.y = _accel_feedforward.y + _pid_rate_lon.get_p(_vel_error.y) + lon_i + _pid_rate_lon.get_d(_vel_error.y, dt);
 
@@ -831,6 +855,7 @@ void AC_PosControl::rate_to_accel_xy(float dt)
 void AC_PosControl::accel_to_lean_angles()
 {
     float accel_right, accel_forward;
+	// CHM - in loiter, ANGLE_MAX is used
     float lean_angle_max = _attitude_control.lean_angle_max();
 
     // To-Do: add 1hz filter to accel_lat, accel_lon
@@ -840,6 +865,9 @@ void AC_PosControl::accel_to_lean_angles()
     accel_right = -_accel_target.x*_ahrs.sin_yaw() + _accel_target.y*_ahrs.cos_yaw();
 
     // update angle targets that will be passed to stabilize controller
+	// CHM - the _ahrs.cos_pitch() looks like try to limit the roll, when there is more pitch
+	// The roll and pitch output is only limited by  ANGLE_MAX
+	// it is in body orientation
     _roll_target = constrain_float(fast_atan(accel_right*_ahrs.cos_pitch()/(GRAVITY_MSS * 100))*(18000/M_PI), -lean_angle_max, lean_angle_max);
     _pitch_target = constrain_float(fast_atan(-accel_forward/(GRAVITY_MSS * 100))*(18000/M_PI),-lean_angle_max, lean_angle_max);
 }
@@ -868,11 +896,12 @@ float AC_PosControl::calc_leash_length(float speed_cms, float accel_cms, float k
     }
 
     // calculate leash length
-    if(speed_cms <= accel_cms / kP) {
+    if(speed_cms <= accel_cms /  kP) {
         // linear leash length based on speed close in
         leash_length = speed_cms / kP;
     }else{
         // leash length grows at sqrt of speed further out
+		// CHM - ???
         leash_length = (accel_cms / (2.0f*kP*kP)) + (speed_cms*speed_cms / (2.0f*accel_cms));
     }
 

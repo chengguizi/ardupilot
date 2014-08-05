@@ -206,12 +206,14 @@ static void failsafe_gps_check()
     // GPS failsafe event has occured
     // update state, warn the ground station and log to dataflash
     set_failsafe_gps(true);
+	// CHM - function to send message??
     gcs_send_text_P(SEVERITY_LOW,PSTR("Lost GPS!"));
     Log_Write_Error(ERROR_SUBSYSTEM_FAILSAFE_GPS, ERROR_CODE_FAILSAFE_OCCURRED);
 
     // take action based on flight mode and FS_GPS_ENABLED parameter
     if (mode_requires_GPS(control_mode) || g.failsafe_gps_enabled == FS_GPS_LAND_EVEN_STABILIZE) {
         if (g.failsafe_gps_enabled == FS_GPS_ALTHOLD && !failsafe.radio) {
+			// CHM - looks like the way to switch mode is SIMPLE!
             set_mode(ALT_HOLD);
         }else{
             set_mode_land_with_pause();

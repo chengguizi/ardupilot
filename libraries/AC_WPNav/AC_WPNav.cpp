@@ -127,6 +127,9 @@ void AC_WPNav::init_loiter_target(const Vector3f& position, bool reset_I)
     _pos_control.init_xy_controller();
 
     // initialise pos controller speed and acceleration
+	// CHM - make _speed_cms = _loiter_speed_cms = LOIT_SPEED
+	// This initialisation may enable the cabability of having different speed for each target??
+	// But in this case, it is always LOIT_SPEED
     _pos_control.set_speed_xy(_loiter_speed_cms);
     _loiter_accel_cms = _loiter_speed_cms/2.0f;
     _pos_control.set_accel_xy(_loiter_accel_cms);
@@ -147,6 +150,7 @@ void AC_WPNav::init_loiter_target(const Vector3f& position, bool reset_I)
 }
 
 /// init_loiter_target - initialize's loiter position and feed-forward velocity from current pos and velocity
+// CHM - this is called when motors are armed, and throttle is above 0; OR inertial position is bad
 void AC_WPNav::init_loiter_target()
 {
     const Vector3f& curr_pos = _inav.get_position();
@@ -156,6 +160,7 @@ void AC_WPNav::init_loiter_target()
     _pos_control.init_xy_controller();
 
     // initialise pos controller speed and acceleration
+	// CHM - this is to set default max speed and max acceleration
     _pos_control.set_speed_xy(_loiter_speed_cms);
     _loiter_accel_cms = _loiter_speed_cms/2.0f;
     _pos_control.set_accel_xy(_loiter_accel_cms);
@@ -167,6 +172,10 @@ void AC_WPNav::init_loiter_target()
     _pos_control.set_desired_velocity_xy(curr_vel.x, curr_vel.y);
 
     // initialise desired accel and add fake wind
+	// CHM - this is to say, the acceleration increase with current velocity, probably to COMPENSATE the wind resistance
+	// but why this is needed in initialisation????
+	// one way to explain it that , when pilot is commanding the uav to move, and in the meanwhile he change mode to loiter.
+	// in this situation, the jerk feeling will be less
     _loiter_desired_accel.x = (_loiter_accel_cms)*curr_vel.x/_loiter_speed_cms;
     _loiter_desired_accel.y = (_loiter_accel_cms)*curr_vel.y/_loiter_speed_cms;
 
@@ -179,6 +188,7 @@ void AC_WPNav::init_loiter_target()
 void AC_WPNav::set_loiter_velocity(float velocity_cms)
 {
     // range check velocity and update position controller
+	// CHM - here is the place to change the _loiter_speed_cms, MAX loiter speed value
     if (velocity_cms >= WPNAV_LOITER_SPEED_MIN) {
         _loiter_speed_cms = velocity_cms;
 
@@ -194,6 +204,14 @@ void AC_WPNav::set_loiter_velocity(float velocity_cms)
 /// set_pilot_desired_acceleration - sets pilot desired acceleration from roll and pitch stick input
 void AC_WPNav::set_pilot_desired_acceleration(float control_roll, float control_pitch)
 {
+	// CHM - added code, ensure when UAV travel diagonally, the acceleration is not too fast
+	// To be verified
+	float net_accel_chm = pythagorous2(control_pitch, control_roll);
+	if (net_accel_chm > 4500.0f)
+	{
+		control_pitch = 4500.0f * control_pitch / net_accel_chm;
+		control_roll = 4500.0f * control_roll / net_accel_chm;
+	}
     // convert pilot input to desired acceleration in cm/s/s
     _pilot_accel_fwd_cms = -control_pitch * _loiter_accel_cms / 4500.0f;
     _pilot_accel_rgt_cms = control_roll * _loiter_accel_cms / 4500.0f;
@@ -222,14 +240,18 @@ void AC_WPNav::calc_loiter_desired_velocity(float nav_dt)
 
     // rotate pilot input to lat/lon frame
     Vector2f desired_accel;
+	// CHM - acceleration along Lat? cos_yaw is cos of angle of heading from the North
+	// This is important, showing that LOITER uses Lat/lon position as reference
     desired_accel.x = (_pilot_accel_fwd_cms*_ahrs.cos_yaw() - _pilot_accel_rgt_cms*_ahrs.sin_yaw());
     desired_accel.y = (_pilot_accel_fwd_cms*_ahrs.sin_yaw() + _pilot_accel_rgt_cms*_ahrs.cos_yaw());
 
     // calculate the difference
+	// CHM - _loiter_desired_accel, initialised as half of the initial velocity, this is to prevent jerk
     Vector2f des_accel_diff = (desired_accel - _loiter_desired_accel);
 
     // constrain and scale the desired acceleration
     float des_accel_change_total = pythagorous2(des_accel_diff.x, des_accel_diff.y);
+	// CHM - _loiter_jerk_max_cmsss == WPNAV_LOIT_JERK, defualt 1000 cm/s/s/s
     float accel_change_max = _loiter_jerk_max_cmsss * nav_dt;
     if (des_accel_change_total > accel_change_max && des_accel_change_total > 0.0f) {
         des_accel_diff.x = accel_change_max * des_accel_diff.x/des_accel_change_total;
@@ -239,19 +261,39 @@ void AC_WPNav::calc_loiter_desired_velocity(float nav_dt)
     _loiter_desired_accel += des_accel_diff;
 
     // get pos_control's feed forward velocity
+	// CHM - return _vel_desired , it is initialised as initial speed
     Vector3f desired_vel = _pos_control.get_desired_velocity();
 
     // add pilot commanded acceleration
-    desired_vel.x += _loiter_desired_accel.x * nav_dt;
-    desired_vel.y += _loiter_desired_accel.y * nav_dt;
+	// CHM - pilot acceleration control is being continuously added to desired velocity
+	// code deleted - move into if-else
+    ///desired_vel.x += _loiter_desired_accel.x * nav_dt;
+    ///desired_vel.y += _loiter_desired_accel.y * nav_dt;
 
     // reduce velocity with fake wind resistance
     if (_pilot_accel_fwd_cms != 0.0f || _pilot_accel_rgt_cms != 0.0f) {
-        desired_vel.x -= (_loiter_accel_cms)*nav_dt*desired_vel.x/_loiter_speed_cms;
-        desired_vel.y -= (_loiter_accel_cms)*nav_dt*desired_vel.y/_loiter_speed_cms;
+		// CHM - looks like, this limit the max speed of UAV. it drastically decrease the effect of the commanded
+		// acceleration, when the desired veloctiy approaching limit
+		// Also it reduce the velocity when the commanded acceleration become smaller
+
+		// CHM - I believe the damping is too much, using the max acceleration _loiter_accel_cms
+		// change to accelerations at respective direction better
+        ///desired_vel.x -= (_loiter_accel_cms)*nav_dt*desired_vel.x/_loiter_speed_cms;
+        ///desired_vel.y -= (_loiter_accel_cms)*nav_dt*desired_vel.y/_loiter_speed_cms;
+		desired_vel.x += (_loiter_desired_accel.x)*nav_dt* (1 - desired_vel.x / _loiter_speed_cms);
+		desired_vel.y += (_loiter_desired_accel.y)*nav_dt* (1 - desired_vel.y / _loiter_speed_cms);
+
+
     } else {
+
+		// CHM - code moved to here
+		desired_vel.x += _loiter_desired_accel.x * nav_dt;
+		desired_vel.y += _loiter_desired_accel.y * nav_dt;
+
+		// CHM - damping of velocity, when there is zero control input
         desired_vel.x -= (_loiter_accel_cms-WPNAV_LOITER_ACCEL_MIN)*nav_dt*desired_vel.x/_loiter_speed_cms;
         if(desired_vel.x > 0 ) {
+			// CHM - when the desired velocity is too small, make it 0
             desired_vel.x = max(desired_vel.x - WPNAV_LOITER_ACCEL_MIN*nav_dt, 0);
         }else if(desired_vel.x < 0) {
             desired_vel.x = min(desired_vel.x + WPNAV_LOITER_ACCEL_MIN*nav_dt, 0);
@@ -282,6 +324,9 @@ void AC_WPNav::update_loiter()
     float dt = (now - _loiter_last_update) / 1000.0f;
 
     // reset step back to 0 if 0.1 seconds has passed and we completed the last full cycle
+	// CHM -
+	// Looks like even though pilot command accel update at 400hz, but the _vel_desired is update only at 50hz
+	// what's the point?
     if (dt >= WPNAV_LOITER_UPDATE_TIME) {
         // double check dt is reasonable
         if (dt >= 1.0f) {
@@ -290,11 +335,14 @@ void AC_WPNav::update_loiter()
         // capture time since last iteration
         _loiter_last_update = now;
         // translate any adjustments from pilot to loiter target
+		// CHM - this will set _vel_desired, in lat/lon, based on pilot commanded acceleration
         calc_loiter_desired_velocity(dt);
         // trigger position controller on next update
+		// CHM - set _flags.force_recalc_xy = true
         _pos_control.trigger_xy();
     }else{
         // run horizontal position controller
+		// CHM - _flags.recalc_leash_xy
         _pos_control.update_xy_controller(true);
     }
 }

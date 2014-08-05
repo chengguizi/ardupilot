@@ -203,6 +203,7 @@ void AC_AttitudeControl::angle_ef_roll_pitch_rate_ef_yaw(float roll_angle_ef, fl
     Vector3f    angle_ef_error;         // earth frame angle errors
 
     // set earth-frame angle targets for roll and pitch and calculate angle error
+	// CHM - x is roll, y is pitch, z is yaw, of the body
     _angle_ef_target.x = constrain_float(roll_angle_ef, -_aparm.angle_max, _aparm.angle_max);
     angle_ef_error.x = wrap_180_cd_float(_angle_ef_target.x - _ahrs.roll_sensor);
 
@@ -232,6 +233,7 @@ void AC_AttitudeControl::angle_ef_roll_pitch_rate_ef_yaw(float roll_angle_ef, fl
     update_rate_bf_targets();
 
     // set roll and pitch feed forward to zero
+	// CHM - _rate_ef_desired.z is NOT set to zero. WHY???
     _rate_ef_desired.x = 0;
     _rate_ef_desired.y = 0;
     // convert earth-frame feed forward rates to body-frame feed forward rates
@@ -521,9 +523,11 @@ void AC_AttitudeControl::integrate_bf_rate_error_to_angle_errors()
 void AC_AttitudeControl::update_rate_bf_targets()
 {
     // stab roll calculation
+	// CHM - this is the parameter Stabilize Roll
     _rate_bf_target.x = _p_angle_roll.kP() * _angle_bf_error.x;
     // constrain roll rate request
     if (_flags.limit_angle_to_rate_request) {
+		// CHM - _angle_rate_rp_max == ATC_RATE_RP_MAX
         _rate_bf_target.x = constrain_float(_rate_bf_target.x,-_angle_rate_rp_max,_angle_rate_rp_max);
     }
 
@@ -541,6 +545,7 @@ void AC_AttitudeControl::update_rate_bf_targets()
         _rate_bf_target.z = constrain_float(_rate_bf_target.z,-_angle_rate_y_max,_angle_rate_y_max);
     }
 
+	// CHM - ???? why
 	_rate_bf_target.x += -_angle_bf_error.y * _ahrs.get_gyro().z;
 	_rate_bf_target.y +=  _angle_bf_error.x * _ahrs.get_gyro().z;
 }
