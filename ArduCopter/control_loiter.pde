@@ -82,7 +82,8 @@ static void loiter_run()
         wp_nav.init_loiter_target();
         attitude_control.relax_bf_rate_controller();
         attitude_control.set_yaw_target_to_current_heading();
-        attitude_control.set_throttle_out(0, false);
+        // move throttle to between minimum and non-takeoff-throttle to keep us on the ground
+        attitude_control.set_throttle_out(get_throttle_pre_takeoff(g.rc_3.control_in), false);
     }else{
         // run loiter controller
 		// CHM -  update _vel_desired , in lat/lon at 50hz

@@ -1,6 +1,6 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
-#define THISFIRMWARE "ArduCopter V3.2-rc3"
+#define THISFIRMWARE "ArduCopter V3.2-rc4"
 /*
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -106,6 +106,7 @@
 #include <AP_ADC.h>             // ArduPilot Mega Analog to Digital Converter Library
 #include <AP_ADC_AnalogSource.h>
 #include <AP_Baro.h>
+#include <AP_Baro_Glitch.h>     // Baro glitch protection library
 #include <AP_Compass.h>         // ArduPilot Mega Magnetometer Library
 #include <AP_Math.h>            // ArduPilot Mega Vector/Matrix math Library
 #include <AP_Curve.h>           // Curve used to linearlise throttle pwm to thrust
@@ -143,6 +144,7 @@
 #include <AP_Notify.h>          // Notify library
 #include <AP_BattMonitor.h>     // Battery monitor library
 #include <AP_BoardConfig.h>     // board configuration library
+#include <AP_Frsky_Telem.h>
 #if SPRAYER == ENABLED
 #include <AC_Sprayer.h>         // crop sprayer library
 #endif
@@ -152,6 +154,7 @@
 #if PARACHUTE == ENABLED
 #include <AP_Parachute.h>		// Parachute release library
 #endif
+#include <AP_Terrain.h>
 
 // AP_HAL to Arduino compatibility layer
 #include "compat.h"
@@ -266,6 +269,7 @@ static AP_Baro_MS5611 barometer(&AP_Baro_MS5611::spi);
 #else
  #error Unrecognized CONFIG_BARO setting
 #endif
+static Baro_Glitch baro_glitch(barometer);
 
 #if CONFIG_COMPASS == HAL_COMPASS_PX4
 static AP_Compass_PX4 compass;
@@ -413,6 +417,7 @@ static struct {
     uint8_t battery             : 1; // 2   // A status flag for the battery failsafe
     uint8_t gps                 : 1; // 3   // A status flag for the gps failsafe
     uint8_t gcs                 : 1; // 4   // A status flag for the ground station failsafe
+    uint8_t ekf                 : 1; // 5   // true if ekf failsafe has occurred
 
     int8_t radio_counter;                  // number of iterations with throttle below throttle_fs_value
 
@@ -550,6 +555,11 @@ static Vector3f flip_orig_attitude;         // original copter attitude before f
 ////////////////////////////////////////////////////////////////////////////////
 static AP_BattMonitor battery;
 
+////////////////////////////////////////////////////////////////////////////////
+// FrSky telemetry support
+#if FRSKY_TELEM_ENABLED == ENABLED
+static AP_Frsky_Telem frsky_telemetry(ahrs, battery);
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // Altitude
@@ -624,9 +634,9 @@ static float G_Dt = 0.02;
 // Inertial Navigation
 ////////////////////////////////////////////////////////////////////////////////
 #if AP_AHRS_NAVEKF_AVAILABLE
-static AP_InertialNav_NavEKF inertial_nav(ahrs, barometer, gps_glitch);
+static AP_InertialNav_NavEKF inertial_nav(ahrs, barometer, gps_glitch, baro_glitch);
 #else
-static AP_InertialNav inertial_nav(ahrs, barometer, gps_glitch);
+static AP_InertialNav inertial_nav(ahrs, barometer, gps_glitch, baro_glitch);
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -729,6 +739,12 @@ static AP_Parachute parachute(relay);
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
+// terrain handling
+#if AP_TERRAIN_AVAILABLE
+AP_Terrain terrain(ahrs);
+#endif
+
+////////////////////////////////////////////////////////////////////////////////
 // Nav Guided - allows external computer to control the vehicle during missions
 ////////////////////////////////////////////////////////////////////////////////
 #if NAV_GUIDED == ENABLED
@@ -788,6 +804,7 @@ static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
 #endif
     { update_notify,         8,     10 },
     { one_hz_loop,         400,     42 },
+    { ekf_check,            40,      2 },
     { crash_check,          40,      2 },
     { gcs_check_input,	     8,    550 },
     { gcs_send_heartbeat,  400,    150 },
@@ -801,6 +818,9 @@ static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
     { fifty_hz_logging_loop, 8,     22 },
     { perf_update,        4000,     20 },
     { read_receiver_rssi,   40,      5 },
+#if FRSKY_TELEM_ENABLED == ENABLED
+    { telemetry_send,       80,     10 },	
+#endif
 #ifdef USERHOOK_FASTLOOP
     { userhook_FastLoop,     4,     10 },
 #endif
@@ -852,6 +872,7 @@ static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
 #endif
     { update_notify,         2,     100 },
     { one_hz_loop,         100,     420 },
+    { ekf_check,            10,      20 },
     { crash_check,          10,      20 },
     { gcs_check_input,	     2,     550 },
     { gcs_send_heartbeat,  100,     150 },
@@ -862,6 +883,9 @@ static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
     { fifty_hz_logging_loop, 2,     220 },
     { perf_update,        1000,     200 },
     { read_receiver_rssi,   10,      50 },
+#if FRSKY_TELEM_ENABLED == ENABLED
+    { telemetry_send,       20,     100 },	
+#endif
 #ifdef USERHOOK_FASTLOOP
     { userhook_FastLoop,     1,    100  },
 #endif
@@ -1177,6 +1201,10 @@ static void one_hz_loop()
 #endif
 
     check_usb_mux();
+
+#if AP_TERRAIN_AVAILABLE
+    terrain.update();
+#endif
 }
 
 // called at 100hz but data from sensor only arrives at 20 Hz
@@ -1369,7 +1397,7 @@ static void read_AHRS(void)
     ahrs.update();
 }
 
-// read baro and sonar altitude at 20hz
+// read baro and sonar altitude at 10hz
 static void update_altitude()
 {
     // read in baro altitude
