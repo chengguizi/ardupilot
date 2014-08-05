@@ -59,4 +59,4 @@
 //#define USERHOOK_SUPERSLOWLOOP userhook_SuperSlowLoop();  // for code to be run at 1hz
 
 // CHM - added safety
-# define FAILSAFE_GPS_TIMEOUT_MS       2000    // gps failsafe triggers after 2 seconds with no GPS
+# define FAILSAFE_GPS_TIMEOUT_MS       1500    // gps failsafe triggers after 2 seconds with no GPS
