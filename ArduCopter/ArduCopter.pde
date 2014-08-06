@@ -584,10 +584,12 @@ static struct   Location current_loc;
 ////////////////////////////////////////////////////////////////////////////////
 // Navigation Roll/Pitch functions
 ////////////////////////////////////////////////////////////////////////////////
+#if OPTFLOW == ENABLED
 // The Commanded ROll from the autopilot based on optical flow sensor.
 static int32_t of_roll;
 // The Commanded pitch from the autopilot based on optical flow sensor. negative Pitch means go forward.
 static int32_t of_pitch;
+#endif // OPTFLOW == ENABLED
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1558,12 +1560,6 @@ static void tuning(){
 
     case CH6_AHRS_KP:
         ahrs._kp.set(tuning_value);
-        break;
-
-    case CH6_INAV_TC:
-        // To-Do: allowing tuning TC for xy and z separately
-        inertial_nav.set_time_constant_xy(tuning_value);
-        inertial_nav.set_time_constant_z(tuning_value);
         break;
 
     case CH6_DECLINATION:
