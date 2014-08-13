@@ -61,3 +61,6 @@
 
 // CHM - added safety
 # define FAILSAFE_GPS_TIMEOUT_MS       1500    // gps failsafe triggers after 2 seconds with no GPS
+
+// CHM - use my own V type frame configuration
+# define USE_MY_FRAME

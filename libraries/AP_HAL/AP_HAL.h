@@ -29,5 +29,10 @@
 /* HAL Class definition */
 #include "HAL.h"
 
+// CHM - here is where all the AP lib refer to
+
+// CHM - use my own V type frame configuration
+# define USE_MY_FRAME
+
 #endif // __AP_HAL_H__
 
