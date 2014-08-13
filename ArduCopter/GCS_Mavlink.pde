@@ -1437,6 +1437,14 @@ static void mavlink_delay_cb()
 /*
  *  send a message on both GCS links
  */
+
+//CHM -  my gcs_send_message
+
+void debug_send_message(enum ap_message id)
+{
+	gcs_send_message(id);
+}
+
 static void gcs_send_message(enum ap_message id)
 {
     for (uint8_t i=0; i<num_gcs; i++) {

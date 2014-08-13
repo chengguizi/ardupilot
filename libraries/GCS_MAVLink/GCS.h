@@ -47,6 +47,8 @@ enum ap_message {
     MSG_WIND,
     MSG_RANGEFINDER,
     MSG_TERRAIN,
+	// CHM - add enum for MSG_NAMED_VALUE_FLOAT 
+	MSG_NAMED_VALUE_FLOAT,
     MSG_RETRY_DEFERRED // this must be last
 };
 
