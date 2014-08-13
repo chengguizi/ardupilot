@@ -8,6 +8,11 @@
 #include <AP_Notify.h>
 #include "AP_GPS_Glitch.h"
 
+#include <GCS.h> //added
+// CHM - debugging
+extern debug_s mydebug;
+void debug_send_message(enum ap_message id);
+
 extern const AP_HAL::HAL& hal;
 
 // table of user settable parameters
@@ -107,6 +112,23 @@ void GPS_Glitch::check_position()
 
     // all ok if within a given hardcoded radius
 	
+	///////////////////////////
+	//////DEBUG Message////////
+	Vector2f locdiff = location_diff(curr_pos, gps_pos);
+	/*
+	strcpy(mydebug.name,"Gl_cm_x");
+	mydebug.valuef = locdiff.x*100.0;
+	debug_send_message(MSG_NAMED_VALUE_FLOAT);
+
+	strcpy(mydebug.name, "Gl_cm_y");
+	mydebug.valuef = locdiff.y*100.0;
+	debug_send_message(MSG_NAMED_VALUE_FLOAT);
+
+	strcpy(mydebug.name, "Gl_cm");
+	mydebug.valuef = distance_cm;
+	debug_send_message(MSG_NAMED_VALUE_FLOAT);
+	///////////////////////////
+	*/
 
 	if (distance_cm <= _radius_cm) {
         all_ok = true;
@@ -114,6 +136,12 @@ void GPS_Glitch::check_position()
         // or if within the maximum distance we could have moved based on our acceleration
         accel_based_distance = 0.5f * _accel_max_cmss * sane_dt * sane_dt;
         all_ok = (distance_cm <= accel_based_distance);
+		/*//////////////////////////
+		//////DEBUG Message////////
+		strcpy(mydebug.name, "Glitch_R");
+		mydebug.valuef = accel_based_distance;
+		debug_send_message(MSG_NAMED_VALUE_FLOAT);
+		//////////////////////////*/
     }
 
 	//CHM - check for altitude change
@@ -121,11 +149,23 @@ void GPS_Glitch::check_position()
 	{
 		distance_cm = abs(gps_pos.alt - curr_pos.alt);
 
+		/*//////////////////////////
+		//////DEBUG Message////////
+		strcpy(mydebug.name, "Gl_alt_cm");
+		mydebug.valuef = gps_pos.alt - curr_pos.alt;
+		debug_send_message(MSG_NAMED_VALUE_FLOAT);
+		//////////////////////////*/
 
 		if (distance_cm > _radius_cm) {
 			// or if within the maximum distance we could have moved based on our acceleration
 			accel_based_distance = 0.5f * _accel_max_cmss * sane_dt * sane_dt;
 			all_ok = (distance_cm <= accel_based_distance);
+			/*//////////////////////////
+			//////DEBUG Message////////
+			strcpy(mydebug.name, "Gl_alt_R");
+			mydebug.valuef = accel_based_distance;
+			debug_send_message(MSG_NAMED_VALUE_FLOAT);
+			//////////////////////////*/
 		}
 
 	}
