@@ -192,6 +192,7 @@ void AP_MotorsMatrix::output_armed()
         // set rpy_low and rpy_high to the lowest and highest values of the motors
         for (i=0; i<AP_MOTORS_MAX_NUM_MOTORS; i++) {
             if (motor_enabled[i]) {
+				// CHM - where roll factor and pitch factor comes in
                 rpy_out[i] = _rc_roll.pwm_out * _roll_factor[i] +
                              _rc_pitch.pwm_out * _pitch_factor[i];
 
@@ -220,7 +221,9 @@ void AP_MotorsMatrix::output_armed()
 
         // calculate amount of yaw we can fit into the throttle range
         // this is always equal to or less than the requested yaw from the pilot or rate controller
-        yaw_allowed = min(out_max_pwm - out_best_thr_pwm, out_best_thr_pwm - out_min_pwm) - (rpy_high-rpy_low)/2;
+		// CHM - we should not assume rpy_high and rpy_low is the same magnitude
+        ///yaw_allowed = min(out_max_pwm - out_best_thr_pwm, out_best_thr_pwm - out_min_pwm) - (rpy_high-rpy_low)/2;
+		yaw_allowed = min(out_max_pwm - out_best_thr_pwm - rpy_high, out_best_thr_pwm - out_min_pwm + rpy_low);
         yaw_allowed = max(yaw_allowed, AP_MOTORS_MATRIX_YAW_LOWER_LIMIT_PWM);
 
         if (_rc_yaw.pwm_out >= 0) {
@@ -246,6 +249,8 @@ void AP_MotorsMatrix::output_armed()
         for (i=0; i<AP_MOTORS_MAX_NUM_MOTORS; i++) {
             if (motor_enabled[i]) {
                 rpy_out[i] =    rpy_out[i] +
+					// CHM - where yaw factor comes in
+					// CHM - increase in yaw_factor can actually increase the yaw strengh, even with yaw_allowed constrained
                                 yaw_allowed * _yaw_factor[i];
 
                 // record lowest roll+pitch+yaw command

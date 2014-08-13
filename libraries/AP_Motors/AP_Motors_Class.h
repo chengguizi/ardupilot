@@ -97,9 +97,12 @@ public:
     int16_t             throttle_max() const { return _max_throttle;}
 
     // set_roll, set_pitch, set_yaw, set_throttle
+	// CHM servo_out of ROLL and PITCH = pid * (difference of command and actual rate, in cm/s)
     void                set_roll(int16_t roll_in) { _rc_roll.servo_out = roll_in; };                    // range -4500 ~ 4500
     void                set_pitch(int16_t pitch_in) { _rc_pitch.servo_out = pitch_in; };                // range -4500 ~ 4500
     void                set_yaw(int16_t yaw_in) { _rc_yaw.servo_out = yaw_in; };                        // range -4500 ~ 4500
+	// CHM get yaw - for getting last yaw value, update at 400hz;
+	int16_t				get_yaw(){ return _rc_yaw.servo_out; };
     void                set_throttle(int16_t throttle_in) { _rc_throttle.servo_out = throttle_in; };    // range 0 ~ 1000
 
     // get_throttle_out - returns throttle sent to motors in the range 0 ~ 1000

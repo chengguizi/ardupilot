@@ -221,6 +221,7 @@ static void init_ardupilot()
         init_compass();
 
     // initialise attitude and position controllers
+	// CHM - attitude_control is running at 400hz for pixhawk
     attitude_control.set_dt(MAIN_LOOP_SECONDS);
     pos_control.set_dt(MAIN_LOOP_SECONDS);
 

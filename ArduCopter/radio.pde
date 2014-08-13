@@ -26,6 +26,7 @@ static void init_rc_in()
     g.rc_3.set_range(g.throttle_min, g.throttle_max);
     g.rc_4.set_angle(4500);
 
+	// CHM - rc 1,2,4 is eventually RC_CHANNEL_TYPE_ANGLE_RAW, although infront have set_angle function
     g.rc_1.set_type(RC_CHANNEL_TYPE_ANGLE_RAW);
     g.rc_2.set_type(RC_CHANNEL_TYPE_ANGLE_RAW);
     g.rc_4.set_type(RC_CHANNEL_TYPE_ANGLE_RAW);

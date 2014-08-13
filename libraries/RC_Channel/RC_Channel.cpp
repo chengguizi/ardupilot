@@ -211,11 +211,12 @@ RC_Channel::calc_pwm(void)
     if(_type == RC_CHANNEL_TYPE_RANGE) {
         pwm_out         = range_to_pwm();
         radio_out       = (_reverse >= 0) ? (radio_min + pwm_out) : (radio_max - pwm_out);
-
+		// CHM - below is the type of ROLL PITCH YAW
     }else if(_type == RC_CHANNEL_TYPE_ANGLE_RAW) {
+		// CHM - pwm now is the pid modified difference of (command rate) and (current rate), in cm/s * 0.1
         pwm_out         = (float)servo_out * 0.1f;
         radio_out       = (pwm_out * _reverse) + radio_trim;
-
+		// CHM - below only used for single motor, and coax
     }else{     // RC_CHANNEL_TYPE_ANGLE
         pwm_out         = angle_to_pwm();
         radio_out       = pwm_out + radio_trim;
