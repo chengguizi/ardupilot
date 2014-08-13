@@ -1265,6 +1265,9 @@ static void update_GPS(void)
     }
 
     if (gps_updated) {
+		///// DEBUG/////
+		///gcs_send_text_P(SEVERITY_MEDIUM, PSTR("GPS_UPDATED"));
+		///// DEBUG END////
         // run glitch protection and update AP_Notify if home has been initialised
         if (ap.home_is_set) {
 			// CHM - check for glitch

@@ -40,5 +40,8 @@ void userhook_SlowLoop()
 void userhook_SuperSlowLoop()
 {
     // put your 1Hz code here
+	//gcs_send_message(MSG_NAMED_VALUE_FLOAT);
+	//gcs_send_text_P(SEVERITY_MEDIUM, PSTR("message test"));
+
 }
 #endif
