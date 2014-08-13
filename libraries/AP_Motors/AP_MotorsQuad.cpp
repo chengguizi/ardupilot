@@ -38,10 +38,35 @@ void AP_MotorsQuad::setup_motors()
 
     }else if( _flags.frame_orientation == AP_MOTORS_V_FRAME ) {
         // V frame set-up
+
+#ifndef USE_MY_FRAME
+
         add_motor(AP_MOTORS_MOT_1,   45,  0.7981,  1);
         add_motor(AP_MOTORS_MOT_2, -135,  1.0000,  3);
         add_motor(AP_MOTORS_MOT_3,  -45, -0.7981,  4);
         add_motor(AP_MOTORS_MOT_4,  135, -1.0000,  2);
+#else
+		// angle of front motors, 72, -72
+		// angle of back motors, 135,-135
+		// 62.5cm vs 46cm 
+
+		// longitudinal length 38.5cm, average span = (62.5+46)/2=54.25
+		/*add_motor(AP_MOTORS_MOT_1,	45,		0.5,	1);
+		add_motor(AP_MOTORS_MOT_2, -135,	0.68,	3);
+		add_motor(AP_MOTORS_MOT_3, -45,		-0.5,	4);
+		add_motor(AP_MOTORS_MOT_4,	135,	-0.68,	2);*/
+
+		// CHM motor_num, roll, pitch, yaw, test sequence
+		// pitch has higher gain, this is because the longitudinal length is relatively smaller than the span
+		// 0.71,1,0.5(0.68) setting is proved working, although yaw is just abit slow.
+		// try change back to 0.9 and 0.6624
+		add_motor_raw(AP_MOTORS_MOT_1, -0.71,	1,	0.6624,	1);
+		add_motor_raw(AP_MOTORS_MOT_2,  0.71, -1,	0.9,	3);
+		add_motor_raw(AP_MOTORS_MOT_3,	0.71,  1,	-0.6624,		4);
+		add_motor_raw(AP_MOTORS_MOT_4, -0.71, -1,	-0.9,		2);
+
+#endif //USE_MY_FRAME
+
 
     }else if( _flags.frame_orientation == AP_MOTORS_H_FRAME ) {
         // H frame set-up - same as X but motors spin in opposite directiSons
