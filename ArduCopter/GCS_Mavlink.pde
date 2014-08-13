@@ -39,6 +39,19 @@ static void gcs_send_deferred(void)
  *  pattern below when adding any new messages
  */
 
+// CHM - add code for named value float 
+static NOINLINE void send_named_value_float(mavlink_channel_t chan)
+{
+	uint32_t now = hal.scheduler->millis();
+
+	mavlink_msg_named_value_float_send(
+		chan,
+		now,
+		mydebug.name,
+		mydebug.valuef
+		);
+}
+
 static NOINLINE void send_heartbeat(mavlink_channel_t chan)
 {
     uint8_t base_mode = MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
@@ -466,6 +479,12 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
 #endif
 
     switch(id) {
+	//CHM - add case for MSG_NAMED_VALUE_FLOAT
+	case MSG_NAMED_VALUE_FLOAT:
+		CHECK_PAYLOAD_SIZE(NAMED_VALUE_FLOAT);
+		send_named_value_float(chan);
+		// CHM - code to add
+		break;
     case MSG_HEARTBEAT:
         CHECK_PAYLOAD_SIZE(HEARTBEAT);
         gcs[chan-MAVLINK_COMM_0].last_heartbeat_time = hal.scheduler->millis();

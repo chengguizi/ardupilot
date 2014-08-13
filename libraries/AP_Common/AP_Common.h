@@ -150,4 +150,10 @@ struct PACKED Location {
 // map from kbaud rate to baudrate
 uint32_t map_baudrate(int16_t rate);
 
+// CHM - variable of debug message
+struct PACKED debug_s
+{
+	char name[11];
+	float valuef;
+};
 #endif // _AP_COMMON_H
