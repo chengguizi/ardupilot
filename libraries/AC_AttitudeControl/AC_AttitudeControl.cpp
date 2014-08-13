@@ -63,6 +63,16 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] PROGMEM = {
     // @User: Advanced
     AP_GROUPINFO("RATE_FF_ENAB", 5, AC_AttitudeControl, _rate_bf_ff_enabled, AC_ATTITUDE_CONTROL_RATE_BF_FF_DEFAULT),
 
+#ifdef USE_MY_FRAME
+	// @Param: YAW_PITCH_K
+	// @DisplayName: Yaw Pitch Decoupling factor
+	// @Description: Controls how much pitch up correction is applied, when the UAV is accelerating in yaw axis.
+	// @User: Advanced
+	AP_GROUPINFO("YAW_PITCH_K", 6, AC_AttitudeControl, _yaw_pitch_decouple_k, 0),
+#endif // USE_MY_FRAME
+
+
+
     AP_GROUPEND
 };
 

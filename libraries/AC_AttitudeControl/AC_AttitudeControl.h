@@ -242,6 +242,7 @@ protected:
     AP_Float            _accel_rp_max;          // maximum rotation acceleration for earth-frame roll and pitch axis
     AP_Float            _accel_y_max;           // maximum rotation acceleration for earth-frame yaw axis
     AP_Int8             _rate_bf_ff_enabled;    // Enable/Disable body frame rate feed forward
+	AP_Float			_yaw_pitch_decouple_k;	// CHM - yaw pitch decouple coefficient
 
     // internal variables
     // To-Do: make rate targets a typedef instead of Vector3f?
