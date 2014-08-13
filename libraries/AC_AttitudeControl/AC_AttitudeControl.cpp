@@ -2,6 +2,7 @@
 
 #include "AC_AttitudeControl.h"
 #include <AP_HAL.h>
+#include "../ArduCopter/Debug_CHM.h"
 
 extern const AP_HAL::HAL& hal;
 
@@ -449,6 +450,7 @@ void AC_AttitudeControl::rate_controller_run()
 		pitch_decouple_factor =  0;
 
 	// chm - datalog of pitch decouple facotr value
+	Log_Write_Data(DATA_PITCH_DECOUPLE_FACTOR, pitch_decouple_factor);
 
 	_motors.set_yaw(curr_yaw);
 	_motors.set_pitch(

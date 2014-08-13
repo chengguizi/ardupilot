@@ -263,6 +263,7 @@ enum FlipState {
 #define MASK_LOG_CAMERA                 (1<<15)
 
 // DATA - event logging
+// CHM - EVENT DATA LOGGING, CAN BE USED
 #define DATA_MAVLINK_FLOAT              1
 #define DATA_MAVLINK_INT32              2
 #define DATA_MAVLINK_INT16              3
@@ -304,6 +305,15 @@ enum FlipState {
 #define DATA_PARACHUTE_DISABLED         49
 #define DATA_PARACHUTE_ENABLED          50
 #define DATA_PARACHUTE_RELEASED         51
+
+// CHM - add defines
+#define DATA_PITCH_DECOUPLE_FACTOR		52
+#define DATA_GPS_LOCATION_DIFFERENCE_CM	53
+#define DATA_GPS_LOCATION_DIFFERENCE_X	54
+#define DATA_GPS_LOCATION_DIFFERENCE_Y	55
+#define DATA_GPS_GROW_RADIUS			56
+#define DATA_GPS_ALTITUDE_DIFFERENCE	57
+#define DATA_GPS_GROW_ALT				58
 
 // Centi-degrees to radians
 #define DEGX100 5729.57795f

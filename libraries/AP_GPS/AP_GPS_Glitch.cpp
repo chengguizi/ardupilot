@@ -10,6 +10,7 @@
 
 #include <GCS.h> //added
 // CHM - debugging
+#include "../ArduCopter/Debug_CHM.h"
 extern debug_s mydebug;
 void debug_send_message(enum ap_message id);
 
@@ -129,6 +130,9 @@ void GPS_Glitch::check_position()
 	debug_send_message(MSG_NAMED_VALUE_FLOAT);
 	///////////////////////////
 	*/
+	Log_Write_Data(DATA_GPS_LOCATION_DIFFERENCE_CM, (float)distance_cm);
+	Log_Write_Data(DATA_GPS_LOCATION_DIFFERENCE_X, (float)locdiff.x*100.0f);
+	Log_Write_Data(DATA_GPS_LOCATION_DIFFERENCE_Y, (float)locdiff.y*100.0f);
 
 	if (distance_cm <= _radius_cm) {
         all_ok = true;
@@ -142,6 +146,7 @@ void GPS_Glitch::check_position()
 		mydebug.valuef = accel_based_distance;
 		debug_send_message(MSG_NAMED_VALUE_FLOAT);
 		//////////////////////////*/
+		Log_Write_Data(DATA_GPS_GROW_RADIUS, accel_based_distance);
     }
 
 	//CHM - check for altitude change
@@ -155,6 +160,7 @@ void GPS_Glitch::check_position()
 		mydebug.valuef = gps_pos.alt - curr_pos.alt;
 		debug_send_message(MSG_NAMED_VALUE_FLOAT);
 		//////////////////////////*/
+		Log_Write_Data(DATA_GPS_ALTITUDE_DIFFERENCE, gps_pos.alt - curr_pos.alt);
 
 		if (distance_cm > _radius_cm) {
 			// or if within the maximum distance we could have moved based on our acceleration
@@ -166,6 +172,7 @@ void GPS_Glitch::check_position()
 			mydebug.valuef = accel_based_distance;
 			debug_send_message(MSG_NAMED_VALUE_FLOAT);
 			//////////////////////////*/
+			Log_Write_Data(DATA_GPS_GROW_ALT, accel_based_distance);
 		}
 
 	}

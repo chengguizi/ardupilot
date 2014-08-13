@@ -25,6 +25,9 @@ void userhook_50Hz()
 #ifdef USERHOOK_MEDIUMLOOP
 void userhook_MediumLoop()
 {
+	strcpy(mydebug.name, "decoupl_k");
+	mydebug.valuef = attitude_control.pitch_decouple_factor;
+	debug_send_message(MSG_NAMED_VALUE_FLOAT);
     // put your 10Hz code here
 }
 #endif
@@ -32,6 +35,7 @@ void userhook_MediumLoop()
 #ifdef USERHOOK_SLOWLOOP
 void userhook_SlowLoop()
 {
+
     // put your 3.3Hz code here
 }
 #endif
