@@ -164,6 +164,9 @@ public:
     // user settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
+	// CHM -  public parameter
+	float pitch_decouple_factor;
+
 protected:
 
     // attitude control flags

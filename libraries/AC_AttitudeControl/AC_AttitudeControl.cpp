@@ -138,6 +138,8 @@ void AC_AttitudeControl::angle_ef_roll_pitch_rate_ef_yaw_smooth(float roll_angle
     	_rate_ef_desired.x = constrain_float(rate_ef_desired, _rate_ef_desired.x-rate_change_limit, _rate_ef_desired.x+rate_change_limit);
 
     	// update earth-frame roll angle target using desired roll rate
+		// CHM - _rate_ef_desired is purely based on change of command input, no input from sensor
+		// CHM - in the function below _angle_ef_target and angle_ef_error is updated
         update_ef_roll_angle_and_error(_rate_ef_desired.x, angle_ef_error, AC_ATTITUDE_RATE_STAB_ROLL_OVERSHOOT_ANGLE_MAX);
 
     	// calculate earth-frame feed forward pitch rate using linear response when close to the target, sqrt response when we're further away
@@ -420,14 +422,49 @@ void AC_AttitudeControl::rate_bf_roll_pitch_yaw(float roll_rate_bf, float pitch_
 // rate_controller_run - run lowest level body-frame rate controller and send outputs to the motors
 //      should be called at 100hz or more
 //
+// CHM - called directly in fast_loop
 void AC_AttitudeControl::rate_controller_run()
 {
     // call rate controllers and send output to motors object
     // To-Do: should the outputs from get_rate_roll, pitch, yaw be int16_t which is the input to the motors library?
     // To-Do: skip this step if the throttle out is zero?
-    _motors.set_roll(rate_bf_to_motor_roll(_rate_bf_target.x));
-    _motors.set_pitch(rate_bf_to_motor_pitch(_rate_bf_target.y));
-    _motors.set_yaw(rate_bf_to_motor_yaw(_rate_bf_target.z));
+	// CHM - this is the place where rate PID is being applied
+	_motors.set_roll(rate_bf_to_motor_roll(_rate_bf_target.x));
+#ifndef USE_MY_FRAME
+	
+	_motors.set_pitch(rate_bf_to_motor_pitch(_rate_bf_target.y));
+	_motors.set_yaw(rate_bf_to_motor_yaw(_rate_bf_target.z));
+#else
+	// CHM - adding code for decoupling of yaw and
+	float last_yaw = _motors.get_yaw();	// range -4500 ~ 4500
+	float curr_yaw = rate_bf_to_motor_yaw(_rate_bf_target.z); // range -4500 ~ 4500
+	
+	if (_dt != 0 && _yaw_pitch_decouple_k > 0.0)
+	{
+		pitch_decouple_factor = pitch_decouple_factor + 0.24*((curr_yaw - last_yaw) / _dt * _yaw_pitch_decouple_k - pitch_decouple_factor);
+		pitch_decouple_factor = abs(pitch_decouple_factor);
+	}
+		
+	else
+		pitch_decouple_factor =  0;
+
+	// chm - datalog of pitch decouple facotr value
+
+	_motors.set_yaw(curr_yaw);
+	_motors.set_pitch(
+		constrain_float
+			(
+			rate_bf_to_motor_pitch(_rate_bf_target.y) + pitch_decouple_factor,
+			-AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX,
+			AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX
+			)
+		);
+	
+
+#endif // USE_MY_FRAME
+
+	
+    
 }
 
 //
@@ -579,6 +616,7 @@ float AC_AttitudeControl::rate_bf_to_motor_roll(float rate_target_cds)
     current_rate = (_ahrs.get_gyro().x * AC_ATTITUDE_CONTROL_DEGX100);
 
     // calculate error and call pid controller
+	// CHM - input of rate controller is the rate difference in **cm/s**
     rate_error = rate_target_cds - current_rate;
     p = _pid_rate_roll.get_p(rate_error);
 
