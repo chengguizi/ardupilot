@@ -309,6 +309,7 @@ AP_AHRS_DCM::_yaw_gain(void) const
 
 
 // return true if we have and should use GPS
+// CHM - return false if gps is disabled
 bool AP_AHRS_DCM::have_gps(void) const
 {
     if (_gps.status() <= AP_GPS::NO_FIX || !_gps_use) {

@@ -134,6 +134,7 @@ public:
         int32_t ground_course_cd;           ///< ground course in 100ths of a degree
         uint16_t hdop;                      ///< horizontal dilution of precision in cm
         uint8_t num_sats;                   ///< Number of visible satelites        
+		// CHM - important , raw GPS velocity is 3-dimensions, and in m/s
         Vector3f velocity;                  ///< 3D velocitiy in m/s, in NED format
         bool have_vertical_velocity:1;      ///< does this GPS give vertical velocity?
         uint32_t last_gps_time_ms;          ///< the system time we got the last GPS timestamp, milliseconds

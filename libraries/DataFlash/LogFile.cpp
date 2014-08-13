@@ -668,6 +668,7 @@ void DataFlash_Class::Log_Write_GPS(const AP_GPS &gps, uint8_t i, int32_t relati
 {
     if (i == 0) {
         const struct Location &loc = gps.location(i);
+		// CHM - This is the format of GPS log in dataflash
         struct log_GPS pkt = {
             LOG_PACKET_HEADER_INIT(LOG_GPS_MSG),
             status        : (uint8_t)gps.status(i),

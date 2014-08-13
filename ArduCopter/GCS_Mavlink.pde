@@ -271,6 +271,7 @@ static void NOINLINE send_location(mavlink_channel_t chan)
     mavlink_msg_global_position_int_send(
         chan,
         fix_time,
+		// The location is not raw GPS position
         current_loc.lat,                // in 1E7 degrees
         current_loc.lng,                // in 1E7 degrees
         gps.location().alt * 10UL,      // millimeters above sea level

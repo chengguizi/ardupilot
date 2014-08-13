@@ -48,6 +48,7 @@ void AP_InertialNav::update(float dt)
     check_baro();
 
     // check if new gps readings have arrived and use them to correct position estimates
+	// CHM - output _position_error
     check_gps();
 
     Vector3f accel_ef = _ahrs.get_accel_ef();
@@ -70,6 +71,7 @@ void AP_InertialNav::update(float dt)
     position_error_hbf.x = _position_error.x * _ahrs.cos_yaw() + _position_error.y * _ahrs.sin_yaw();
     position_error_hbf.y = -_position_error.x * _ahrs.sin_yaw() + _position_error.y * _ahrs.cos_yaw();
 
+	// CHM - _k3_xy is the reciprocal of the cube of parameter TC_XY
     float tmp = _k3_xy * dt;
     accel_correction_hbf.x += position_error_hbf.x * tmp;
     accel_correction_hbf.y += position_error_hbf.y * tmp;
@@ -81,6 +83,7 @@ void AP_InertialNav::update(float dt)
     _velocity.z += _position_error.z * _k2_z  * dt;
 
     tmp = _k1_xy * dt;
+	// CHM - update position correction, with gps data
     _position_correction.x += _position_error.x * tmp;
     _position_correction.y += _position_error.y * tmp;
     _position_correction.z += _position_error.z * _k1_z  * dt;
@@ -137,6 +140,7 @@ void AP_InertialNav::check_gps()
     if(gps.last_fix_time_ms() != _gps_last_time ) {
 
         // call position correction method
+		// CHM - output _position_error
         correct_with_gps(now, gps.location().lng, gps.location().lat);
 
         // record gps time and system time of this update
@@ -172,6 +176,7 @@ void AP_InertialNav::correct_with_gps(uint32_t now, int32_t lon, int32_t lat)
     }
 
     // calculate distance from base location
+	// CHM - x y is raw GPS loaction, relative
     x = (float)(lat - _ahrs.get_home().lat) * LATLON_TO_CM;
     y = (float)(lon - _ahrs.get_home().lng) * _lon_to_cm_scaling;
 
@@ -183,6 +188,7 @@ void AP_InertialNav::correct_with_gps(uint32_t now, int32_t lon, int32_t lat)
     }else{
         // if our internal glitching flag (from previous iteration) is true we have just recovered from a glitch
         // reset the inertial nav position and velocity to gps values
+		// CHM - the code here reset the position and velocity after a glitch
         if (_flags.gps_glitching) {
             set_position_xy(x,y);
             set_velocity_xy(_ahrs.get_gps().velocity().x * 100.0f,
@@ -218,6 +224,7 @@ int32_t AP_InertialNav::get_latitude() const
         return 0;
     }
 
+	// CHM - return positition based on _position.x
     return _ahrs.get_home().lat + (int32_t)(_position.x/LATLON_TO_CM);
 }
 

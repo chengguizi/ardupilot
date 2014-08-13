@@ -249,6 +249,7 @@ static const AP_InertialSensor::Sample_rate ins_sample_rate = AP_InertialSensor:
 
 static AP_GPS  gps;
 
+// CHM looks like gps and _gps reference in the glitch function is always the same
 static GPS_Glitch gps_glitch(gps);
 
 // flight modes convenience array
