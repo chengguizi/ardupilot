@@ -66,13 +66,18 @@ void GPS_Glitch::check_position()
 
     // if not initialised or disabled update last good position and exit
     if (!_flags.initialised || !_enabled) {
+		// CHM .location etc is updated in gps.update()
         const Location &loc = _gps.location();
         const Vector3f &vel = _gps.velocity();
         _last_good_update = now;
         _last_good_lat = loc.lat;
         _last_good_lon = loc.lng;
+		//CHM - add altitude, in centimeters
+		_last_good_alt = loc.alt;
         _last_good_vel.x = vel.x;
         _last_good_vel.y = vel.y;
+		//CHM - add vertical velocity
+		_last_good_vel.z = vel.z;
         _flags.initialised = true;
         _flags.glitching = false;
         return;
@@ -84,16 +89,26 @@ void GPS_Glitch::check_position()
     // project forward our position from last known velocity
     curr_pos.lat = _last_good_lat;
     curr_pos.lng = _last_good_lon;
-    location_offset(curr_pos, _last_good_vel.x * sane_dt, _last_good_vel.y * sane_dt);
+	// CHM - add altitude verification
+	curr_pos.alt = _last_good_alt;
+
+	if (_gps.have_vertical_velocity())
+		location_offset(curr_pos, _last_good_vel.x * sane_dt, _last_good_vel.y * sane_dt, _last_good_vel.z * 100.0f * sane_dt);
+	else
+		location_offset(curr_pos, _last_good_vel.x * sane_dt, _last_good_vel.y * sane_dt);
 
     // calculate distance from recent gps position to current estimate
     const Location &loc = _gps.location();
     gps_pos.lat = loc.lat;
     gps_pos.lng = loc.lng;
+	gps_pos.alt = loc.alt; //add
+	// CHM - this distance is in xy plane only
     distance_cm = get_distance_cm(curr_pos, gps_pos);
 
     // all ok if within a given hardcoded radius
-    if (distance_cm <= _radius_cm) {
+	
+
+	if (distance_cm <= _radius_cm) {
         all_ok = true;
     }else{
         // or if within the maximum distance we could have moved based on our acceleration
@@ -101,15 +116,41 @@ void GPS_Glitch::check_position()
         all_ok = (distance_cm <= accel_based_distance);
     }
 
+	//CHM - check for altitude change
+	if (all_ok && _gps.have_vertical_velocity())
+	{
+		distance_cm = abs(gps_pos.alt - curr_pos.alt);
+
+
+		if (distance_cm > _radius_cm) {
+			// or if within the maximum distance we could have moved based on our acceleration
+			accel_based_distance = 0.5f * _accel_max_cmss * sane_dt * sane_dt;
+			all_ok = (distance_cm <= accel_based_distance);
+		}
+
+	}
+
+	// CHM - code added
+	// once failsafe occured, wait until reasonable hdop and satellite number is obtained
+	// perhaps the altitude info must be reasonable, based on barometer
+	if (_flags.glitching)
+	{
+		if (_gps.get_hdop() > 200 || _gps.num_sats() <= 8 /*|| abs(baro_alt - _gps.location().alt)*/)
+			all_ok = false;
+	}
+		
+
     // store updates to gps position
     if (all_ok) {
         // position is acceptable
         _last_good_update = now;
         _last_good_lat = loc.lat;
         _last_good_lon = loc.lng;
+		_last_good_alt = loc.alt; // CHM - code added
         const Vector3f &vel = _gps.velocity();
         _last_good_vel.x = vel.x;
         _last_good_vel.y = vel.y;
+		_last_good_vel.z = vel.z; // CHM - code added
     }
     
     // update glitching flag

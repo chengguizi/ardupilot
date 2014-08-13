@@ -62,7 +62,9 @@ private:
     uint32_t    _last_good_update;  // system time of last gps update that passed checks
     int32_t     _last_good_lat;     // last good latitude reported by the gps
     int32_t     _last_good_lon;     // last good longitude reported by the gps
-    Vector2f    _last_good_vel;     // last good velocity reported by the gps in cm/s in lat and lon directions
+	int32_t		_last_good_alt;		// CHM - last good altitude reported by the gps
+    Vector3f    _last_good_vel;     // last good velocity reported by the gps in cm/s in lat and lon directions
+									// CHM - looks like in m/s not cm/s
 };
 
 #endif // __GPS_H__

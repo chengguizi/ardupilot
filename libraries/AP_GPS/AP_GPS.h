@@ -168,6 +168,14 @@ public:
         return status(primary_instance);
     }
 
+	//CHM - function to return have_vertical_velocity
+	bool have_vertical_velocity(uint8_t instance)	{
+		return _GPS_STATE(instance).have_vertical_velocity;
+	}
+	bool have_vertical_velocity(void)	{
+		return have_vertical_velocity(primary_instance);
+	}
+
     // Query the highest status this GPS supports
     GPS_Status highest_supported_status(uint8_t instance) const;
     GPS_Status highest_supported_status(void) const;

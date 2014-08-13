@@ -134,6 +134,7 @@ void location_update(struct Location &loc, float bearing, float distance)
 void location_offset(struct Location &loc, float ofs_north, float ofs_east)
 {
     if (ofs_north != 0 || ofs_east != 0) {
+		//CHM - 1e-7 degrees
         int32_t dlat = ofs_north * LOCATION_SCALING_FACTOR_INV;
         int32_t dlng = (ofs_east * LOCATION_SCALING_FACTOR_INV) / longitude_scale(loc);
         loc.lat += dlat;
@@ -141,6 +142,15 @@ void location_offset(struct Location &loc, float ofs_north, float ofs_east)
     }
 }
 
+// overload to get location offset with gps
+void location_offset(struct Location &loc, float ofs_north, float ofs_east, float ofs_up)
+{
+	location_offset(loc, ofs_north, ofs_east);
+	if (ofs_up != 0)
+	{
+		loc.alt += ofs_up;
+	}
+}
 /*
   return the distance in meters in North/East plane as a N/E vector
   from loc1 to loc2

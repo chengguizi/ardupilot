@@ -121,6 +121,9 @@ void        location_update(struct Location &loc, float bearing, float distance)
 // extrapolate latitude/longitude given distances north and east
 void        location_offset(struct Location &loc, float ofs_north, float ofs_east);
 
+// CHM - overloading
+void 		location_offset(struct Location &loc, float ofs_north, float ofs_east, float ofs_up);
+
 /*
   return the distance in meters in North/East plane as a N/E vector
   from loc1 to loc2
