@@ -551,7 +551,8 @@ struct PACKED log_Data_Int16t {
 };
 
 // Write an int16_t data packet
-static void Log_Write_Data(uint8_t id, int16_t value)
+// CHM - delete static prefix
+void Log_Write_Data(uint8_t id, int16_t value)
 {
     if (g.log_bitmask != 0) {
         struct log_Data_Int16t pkt = {
@@ -570,7 +571,7 @@ struct PACKED log_Data_UInt16t {
 };
 
 // Write an uint16_t data packet
-static void Log_Write_Data(uint8_t id, uint16_t value)
+void Log_Write_Data(uint8_t id, uint16_t value)
 {
     if (g.log_bitmask != 0) {
         struct log_Data_UInt16t pkt = {
@@ -589,7 +590,7 @@ struct PACKED log_Data_Int32t {
 };
 
 // Write an int32_t data packet
-static void Log_Write_Data(uint8_t id, int32_t value)
+void Log_Write_Data(uint8_t id, int32_t value)
 {
     if (g.log_bitmask != 0) {
         struct log_Data_Int32t pkt = {
@@ -608,7 +609,7 @@ struct PACKED log_Data_UInt32t {
 };
 
 // Write a uint32_t data packet
-static void Log_Write_Data(uint8_t id, uint32_t value)
+void Log_Write_Data(uint8_t id, uint32_t value)
 {
     if (g.log_bitmask != 0) {
         struct log_Data_UInt32t pkt = {
@@ -627,7 +628,7 @@ struct PACKED log_Data_Float {
 };
 
 // Write a float data packet
-static void Log_Write_Data(uint8_t id, float value)
+void Log_Write_Data(uint8_t id, float value)
 {
     if (g.log_bitmask != 0) {
         struct log_Data_Float pkt = {
@@ -772,11 +773,11 @@ static void Log_Write_AutoTuneDetails(int16_t angle_cd, float rate_cds) {}
 static void Log_Write_Current() {}
 static void Log_Write_Compass() {}
 static void Log_Write_Attitude() {}
-static void Log_Write_Data(uint8_t id, int16_t value){}
-static void Log_Write_Data(uint8_t id, uint16_t value){}
-static void Log_Write_Data(uint8_t id, int32_t value){}
-static void Log_Write_Data(uint8_t id, uint32_t value){}
-static void Log_Write_Data(uint8_t id, float value){}
+void Log_Write_Data(uint8_t id, int16_t value){}
+void Log_Write_Data(uint8_t id, uint16_t value){}
+void Log_Write_Data(uint8_t id, int32_t value){}
+void Log_Write_Data(uint8_t id, uint32_t value){}
+void Log_Write_Data(uint8_t id, float value){}
 static void Log_Write_Event(uint8_t id){}
 static void Log_Write_Optflow() {}
 static void Log_Write_Nav_Tuning() {}
