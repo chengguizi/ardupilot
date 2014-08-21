@@ -12,7 +12,7 @@
 #endif
 
 #ifndef EKF_CHECK_COMPASS_INAV_CONVERSION
- # define EKF_CHECK_COMPASS_INAV_CONVERSION 0.01f  // converts the inertial nav's acceleration corrections to a form that is comparable to the ekf variance
+ # define EKF_CHECK_COMPASS_INAV_CONVERSION 0.0075f // converts the inertial nav's acceleration corrections to a form that is comparable to the ekf variance
 #endif
 
 #ifndef EKF_CHECK_WARNING_TIME
@@ -76,10 +76,10 @@ void ekf_check()
                 ekf_check_state.fail_count_compass = EKF_CHECK_ITERATIONS_MAX;
                 ekf_check_state.bad_compass = true;
                 // log an error in the dataflash
-                Log_Write_Error(ERROR_SUBSYSTEM_EKF_CHECK, ERROR_CODE_EKF_CHECK_BAD_COMPASS);
+                Log_Write_Error(ERROR_SUBSYSTEM_EKF_CHECK, ERROR_CODE_EKF_CHECK_BAD_VARIANCE);
                 // send message to gcs
                 if ((hal.scheduler->millis() - ekf_check_state.last_warn_time) > EKF_CHECK_WARNING_TIME) {
-                    gcs_send_text_P(SEVERITY_HIGH,PSTR("EKF: compass variance"));
+                    gcs_send_text_P(SEVERITY_HIGH,PSTR("EKF variance"));
                     ekf_check_state.last_warn_time = hal.scheduler->millis();
                 }
                 failsafe_ekf_event();
@@ -94,7 +94,7 @@ void ekf_check()
             if (ekf_check_state.fail_count_compass == 0) {
                 ekf_check_state.bad_compass = false;
                 // log recovery in the dataflash
-                Log_Write_Error(ERROR_SUBSYSTEM_EKF_CHECK, ERROR_CODE_EKF_CHECK_BAD_COMPASS_CLEARED);
+                Log_Write_Error(ERROR_SUBSYSTEM_EKF_CHECK, ERROR_CODE_EKF_CHECK_BAD_VARIANCE_CLEARED);
                 // clear failsafe
                 failsafe_ekf_off_event();
             }

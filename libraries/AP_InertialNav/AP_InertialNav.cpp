@@ -191,8 +191,6 @@ void AP_InertialNav::correct_with_gps(uint32_t now, int32_t lon, int32_t lat)
 		// CHM - the code here reset the position and velocity after a glitch
         if (_flags.gps_glitching) {
             set_position_xy(x,y);
-            set_velocity_xy(_ahrs.get_gps().velocity().x * 100.0f,
-                            _ahrs.get_gps().velocity().y * 100.0f);
             _position_error.x = 0.0f;
             _position_error.y = 0.0f;
         }else{
@@ -341,7 +339,6 @@ void AP_InertialNav::correct_with_baro(float baro_alt, float dt)
         // reset the inertial nav alt to baro alt
         if (_flags.baro_glitching) {
             set_altitude(baro_alt);
-            set_velocity_z(_baro.get_climb_rate() * 100.0f);
             _position_error.z = 0.0f;
         }else{
             // 3rd order samples (i.e. position from baro) are delayed by 150ms (15 iterations at 100hz)

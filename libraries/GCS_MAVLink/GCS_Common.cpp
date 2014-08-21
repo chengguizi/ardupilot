@@ -630,15 +630,17 @@ void GCS_MAVLINK::handle_param_set(mavlink_message_t *msg, DataFlash_Class *Data
 void
 GCS_MAVLINK::send_text(gcs_severity severity, const char *str)
 {
-    if (severity == SEVERITY_LOW) {
+    if (severity != SEVERITY_LOW && 
+        comm_get_txspace(chan) >= 
+        MAVLINK_NUM_NON_PAYLOAD_BYTES+MAVLINK_MSG_ID_STATUSTEXT_LEN) {
+        // send immediately
+        mavlink_msg_statustext_send(chan, severity, str);
+    } else {
         // send via the deferred queuing system
         mavlink_statustext_t *s = &pending_status;
         s->severity = (uint8_t)severity;
         strncpy((char *)s->text, str, sizeof(s->text));
         send_message(MSG_STATUSTEXT);
-    } else {
-        // send immediately
-        mavlink_msg_statustext_send(chan, severity, str);
     }
 }
 
@@ -1125,4 +1127,38 @@ void GCS_MAVLINK::send_ahrs(AP_AHRS &ahrs)
         0,
         ahrs.get_error_rp(),
         ahrs.get_error_yaw());
+}
+
+/*
+  send a statustext message to all active MAVLink connections
+ */
+void GCS_MAVLINK::send_statustext_all(const prog_char_t *msg)
+{
+    for (uint8_t i=0; i<MAVLINK_COMM_NUM_BUFFERS; i++) {
+        if ((1U<<i) & mavlink_active) {
+            mavlink_channel_t chan = (mavlink_channel_t)i;
+            if (comm_get_txspace(chan) >= MAVLINK_NUM_NON_PAYLOAD_BYTES + MAVLINK_MSG_ID_STATUSTEXT_LEN) {
+#if CONFIG_HAL_BOARD == HAL_BOARD_APM1 || CONFIG_HAL_BOARD == HAL_BOARD_APM2
+                char msg2[50];
+                strncpy_P(msg2, msg, sizeof(msg2));
+                mavlink_msg_statustext_send(chan,
+                                            SEVERITY_HIGH,
+                                            msg2);
+#else
+                mavlink_msg_statustext_send(chan,
+                                            SEVERITY_HIGH,
+                                            msg);
+#endif
+            }
+        }
+    }
+}
+
+// report battery2 state
+void GCS_MAVLINK::send_battery2(const AP_BattMonitor &battery)
+{
+    float voltage;
+    if (battery.voltage2(voltage)) {
+        mavlink_msg_battery2_send(chan, voltage*1000, -1);
+    }
 }

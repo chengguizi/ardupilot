@@ -32,6 +32,7 @@
 #include <AP_Progmem.h>
 #include <AP_HAL.h>
 #include <AP_Param.h>
+#include <StorageManager.h>
 #include <AP_GPS.h>         // ArduPilot GPS library
 #include <AP_Baro.h>        // ArduPilot barometer library
 #include <AP_Compass.h>     // ArduPilot Mega Magnetometer Library
@@ -55,6 +56,7 @@
 #include <AP_Vehicle.h>
 #include <AP_Mission.h>
 #include <AP_Terrain.h>
+#include <AP_Rally.h>
 #include <AP_Notify.h>      // Notify library
 #include <AP_BattMonitor.h> // Battery monitor library
 #include <AP_Airspeed.h>
@@ -243,7 +245,7 @@ static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
 };
 
 // setup the var_info table
-AP_Param param_loader(var_info, EEPROM_MAX_ADDR);
+AP_Param param_loader(var_info);
 
 /**
   setup the sketch - called once on startup

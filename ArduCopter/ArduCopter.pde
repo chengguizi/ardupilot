@@ -1,6 +1,6 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
-#define THISFIRMWARE "ArduCopter V3.2-rc4"
+#define THISFIRMWARE "ArduCopter V3.2-rc5"
 /*
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -87,6 +87,7 @@
 #include <AP_Progmem.h>
 #include <AP_Menu.h>
 #include <AP_Param.h>
+#include <StorageManager.h>
 // AP_HAL
 #include <AP_HAL.h>
 #include <AP_HAL_AVR.h>
@@ -324,7 +325,7 @@ SITL sitl;
 static bool start_command(const AP_Mission::Mission_Command& cmd);
 static bool verify_command(const AP_Mission::Mission_Command& cmd);
 static void exit_mission();
-AP_Mission mission(ahrs, &start_command, &verify_command, &exit_mission, MISSION_START_BYTE, MISSION_END_BYTE);
+AP_Mission mission(ahrs, &start_command, &verify_command, &exit_mission);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Optical flow sensor
@@ -717,7 +718,7 @@ AC_Fence    fence(&inertial_nav);
 // Rally library
 ////////////////////////////////////////////////////////////////////////////////
 #if AC_RALLY == ENABLED
-AP_Rally rally(ahrs, MAX_RALLYPOINTS, RALLY_START_BYTE);
+AP_Rally rally(ahrs);
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -744,7 +745,7 @@ static AP_Parachute parachute(relay);
 ////////////////////////////////////////////////////////////////////////////////
 // terrain handling
 #if AP_TERRAIN_AVAILABLE
-AP_Terrain terrain(ahrs);
+AP_Terrain terrain(ahrs, mission, rally);
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -773,7 +774,7 @@ static void pre_arm_checks(bool display_failure);
 ////////////////////////////////////////////////////////////////////////////////
 
 // setup the var_info table
-AP_Param param_loader(var_info, MISSION_START_BYTE);
+AP_Param param_loader(var_info);
 
 #if MAIN_LOOP_RATE == 400
 /*
@@ -920,6 +921,9 @@ void setup()
 
     // Load the default values of variables listed in var_info[]s
     AP_Param::setup_sketch_defaults();
+
+    // setup storage layout for copter
+    StorageManager::set_layout_copter();
 
     init_ardupilot();
 
@@ -1524,11 +1528,6 @@ static void tuning(){
     // Acro yaw gain
     case CH6_ACRO_YAW_KP:
         g.acro_yaw_p = tuning_value;
-        break;
-
-    case CH6_RELAY:
-        if (g.rc_6.control_in > 525) relay.on(0);
-        if (g.rc_6.control_in < 475) relay.off(0);
         break;
 
 #if FRAME_CONFIG == HELI_FRAME

@@ -104,6 +104,24 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @User: Advanced
     GSCALAR(kff_throttle_to_pitch,  "KFF_THR2PTCH",   0),
 
+    // @Param: STAB_PITCH_DOWN
+    // @DisplayName: Low throttle pitch down trim 
+    // @Description: This controls the amount of down pitch to add in FBWA and AUTOTUNE modes when at low throttle. No down trim is added when throttle is above TRIM_THROTTLE. Below TRIM_THROTTLE downtrim is added in proportion to the amount the throttle is below TRIM_THROTTLE. At zero throttle the full downpitch specified in this parameter is added. This parameter is meant to help keep airspeed up when flying in FBWA mode with low throttle, such as when on a landing approach, without relying on an airspeed sensor. A value of 2 degrees is good for many planes, although a higher value may be needed for high drag aircraft.
+    // @Range: 0 15
+    // @Increment: 0.1
+    // @Units: Degrees
+    // @User: Advanced
+    GSCALAR(stab_pitch_down, "STAB_PITCH_DOWN",   2.0f),
+
+    // @Param: GLIDE_SLOPE_MIN
+    // @DisplayName: Glide slope threshold
+    // @Description: This controls the minimum altitude change for a waypoint before a glide slope will be used instead of an immediate altitude change. The default value is 15 meters, which helps to smooth out waypoint missions where small altitude changes happen near waypoints. If you don't want glide slopes to be used in missions then you can set this to zero, which will disable glide slope calculations. Otherwise you can set it to a minimum number of meters of altitude error to the destination waypoint before a glide slope will be used to change altitude.
+    // @Range: 0 1000
+    // @Increment: 1
+    // @Units: meters
+    // @User: Advanced
+    GSCALAR(glide_slope_threshold, "GLIDE_SLOPE_MIN", 15),
+
     // @Param: STICK_MIXING
     // @DisplayName: Stick Mixing
     // @Description: When enabled, this adds user stick input to the control surfaces in auto modes, allowing the user to have some degree of flight control without changing modes.  There are two types of stick mixing available. If you set STICK_MIXING to 1 then it will use "fly by wire" mixing, which controls the roll and pitch in the same way that the FBWA mode does. This is the safest option if you usually fly ArduPlane in FBWA or FBWB mode. If you set STICK_MIXING to 2 then it will enable direct mixing mode, which is what the STABILIZE mode uses. That will allow for much more extreme maneuvers while in AUTO mode.
@@ -373,6 +391,14 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @Values: 0:Disabled,1:Enabled
     // @User: Standard
     GSCALAR(terrain_follow, "TERRAIN_FOLLOW",  0),
+
+    // @Param: TERRAIN_LOOKAHD
+    // @DisplayName: Terrain lookahead
+    // @Description: This controls how far ahead the terrain following code looks to ensure it stays above upcoming terrain. A value of zero means no lookahead, so the controller will track only the terrain directly below the aircraft. The lookahead will never extend beyond the next waypoint when in AUTO mode.
+    // @Range: 0 10000
+    // @Units: meters
+    // @User: Standard
+    GSCALAR(terrain_lookahead, "TERRAIN_LOOKAHD",  2000),
 #endif
 
     // @Param: FBWB_CLIMB_RATE
@@ -1047,7 +1073,9 @@ const AP_Param::Info var_info[] PROGMEM = {
 #endif
 
 #if OBC_FAILSAFE == ENABLED
-    GOBJECT(obc,  "FS_", APM_OBC),
+    // @Group: AFS_
+    // @Path: ../libraries/APM_OBC/APM_OBC.cpp
+    GOBJECT(obc,  "AFS_", APM_OBC),
 #endif
 
 #if AP_AHRS_NAVEKF_AVAILABLE
