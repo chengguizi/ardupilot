@@ -265,46 +265,34 @@ void AC_WPNav::calc_loiter_desired_velocity(float nav_dt)
 	// CHM - return _vel_desired , it is initialised as initial speed
     Vector3f desired_vel = _pos_control.get_desired_velocity();
 
-    // add pilot commanded acceleration
-	// CHM - pilot acceleration control is being continuously added to desired velocity
-	// code deleted - move into if-else
-    ///desired_vel.x += _loiter_desired_accel.x * nav_dt;
-    ///desired_vel.y += _loiter_desired_accel.y * nav_dt;
-
     // reduce velocity with fake wind resistance
-    if (_pilot_accel_fwd_cms != 0.0f || _pilot_accel_rgt_cms != 0.0f) {
-		// CHM - looks like, this limit the max speed of UAV. it drastically decrease the effect of the commanded
-		// acceleration, when the desired veloctiy approaching limit
-		// Also it reduce the velocity when the commanded acceleration become smaller
+	// CHM - the fake wind should always exist no matter what is the pilot input
+	// DELETE if condition here
 
-		// CHM - I believe the damping is too much, using the max acceleration _loiter_accel_cms
-		// change to accelerations at respective direction better
-        ///desired_vel.x -= (_loiter_accel_cms)*nav_dt*desired_vel.x/_loiter_speed_cms;
-        ///desired_vel.y -= (_loiter_accel_cms)*nav_dt*desired_vel.y/_loiter_speed_cms;
-		desired_vel.x += (_loiter_desired_accel.x)*nav_dt* (1 - desired_vel.x / _loiter_speed_cms);
-		desired_vel.y += (_loiter_desired_accel.y)*nav_dt* (1 - desired_vel.y / _loiter_speed_cms);
+	// CHM - in the following code, a WPNAV_LOITER_ACCEL_MIN deceleration always applies.
+	// This will make sure the UAV decelerate to true 0 speed in time, in max. 5~6 sec
+	//
+	// Another feature to note is that, the desired velocity will never hit _loiter_speed_cms,
+	// due to the damping.
+	// In max. acceleration, it can achieve 90% of max. velocity in 5 sec
 
+	desired_vel.x += _loiter_desired_accel.x * nav_dt
+		- (_loiter_accel_cms - WPNAV_LOITER_ACCEL_MIN)*nav_dt*desired_vel.x / _loiter_speed_cms;
+        
+	if(desired_vel.x > 0 ) {
+		// CHM - when the desired velocity is too small, make it 0
+    desired_vel.x = max(desired_vel.x - WPNAV_LOITER_ACCEL_MIN*nav_dt, 0);
+    }else if(desired_vel.x < 0) {
+        desired_vel.x = min(desired_vel.x + WPNAV_LOITER_ACCEL_MIN*nav_dt, 0);
+    }
 
-    } else {
-
-		// CHM - code moved to here
-		desired_vel.x += _loiter_desired_accel.x * nav_dt;
-		desired_vel.y += _loiter_desired_accel.y * nav_dt;
-
-		// CHM - damping of velocity, when there is zero control input
-        desired_vel.x -= (_loiter_accel_cms-WPNAV_LOITER_ACCEL_MIN)*nav_dt*desired_vel.x/_loiter_speed_cms;
-        if(desired_vel.x > 0 ) {
-			// CHM - when the desired velocity is too small, make it 0
-            desired_vel.x = max(desired_vel.x - WPNAV_LOITER_ACCEL_MIN*nav_dt, 0);
-        }else if(desired_vel.x < 0) {
-            desired_vel.x = min(desired_vel.x + WPNAV_LOITER_ACCEL_MIN*nav_dt, 0);
-        }
-        desired_vel.y -= (_loiter_accel_cms-WPNAV_LOITER_ACCEL_MIN)*nav_dt*desired_vel.y/_loiter_speed_cms;
-        if(desired_vel.y > 0 ) {
-            desired_vel.y = max(desired_vel.y - WPNAV_LOITER_ACCEL_MIN*nav_dt, 0);
-        }else if(desired_vel.y < 0) {
-            desired_vel.y = min(desired_vel.y + WPNAV_LOITER_ACCEL_MIN*nav_dt, 0);
-        }
+	desired_vel.y += _loiter_desired_accel.y * nav_dt
+		- (_loiter_accel_cms-WPNAV_LOITER_ACCEL_MIN)*nav_dt*desired_vel.y/_loiter_speed_cms;
+        
+	if(desired_vel.y > 0 ) {
+        desired_vel.y = max(desired_vel.y - WPNAV_LOITER_ACCEL_MIN*nav_dt, 0);
+    }else if(desired_vel.y < 0) {
+        desired_vel.y = min(desired_vel.y + WPNAV_LOITER_ACCEL_MIN*nav_dt, 0);
     }
 
     // send adjusted feed forward velocity back to position controller
