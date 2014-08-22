@@ -727,6 +727,8 @@ void AC_PosControl::pos_to_rate_xy(bool use_desired_rate, float dt)
         _pos_error.y = _pos_target.y - curr_pos.y;
 
         // constrain target position to within reasonable distance of current location
+		// CHM - the code below, using _leash to limit the _distance_to_target, will make sure
+		// the vel_total will be <= _speed_cms
         _distance_to_target = pythagorous2(_pos_error.x, _pos_error.y);
         if (_distance_to_target > _leash && _distance_to_target > 0.0f) {
             _pos_target.x = curr_pos.x + _leash * _pos_error.x/_distance_to_target;
@@ -758,10 +760,16 @@ void AC_PosControl::pos_to_rate_xy(bool use_desired_rate, float dt)
         float vel_max_from_pos_error;
         if (use_desired_rate) {
             // if desired velocity (i.e. velocity feed forward) is being used we limit the maximum velocity correction due to position error to 2m/s
-            vel_max_from_pos_error = POSCONTROL_VEL_XY_MAX_FROM_POS_ERR;
+            // CHM - for kP == 1, 200.0f not even pass the linear region
+			// for kP ==2, 200.0f just passed the linear region
+			vel_max_from_pos_error = POSCONTROL_VEL_XY_MAX_FROM_POS_ERR;
         }else{
             // if desired velocity is not used, we allow position error to increase speed up to maximum speed
-            vel_max_from_pos_error = _speed_cms;
+            // CHM - This will only be exceeded when distance difference is ~equal to _speed_cms
+			// which is definitely a rare case.
+			// Furthermore, theoretically, this condition will never be met, as 
+			// vel_total is by design <= _speed_cms
+			vel_max_from_pos_error = _speed_cms;
         }
 
         // scale velocity to stays within limits
@@ -869,7 +877,12 @@ void AC_PosControl::accel_to_lean_angles()
 	// CHM - the _ahrs.cos_pitch() looks like try to limit the roll, when there is more pitch
 	// The roll and pitch output is only limited by  ANGLE_MAX
 	// it is in body orientation
-    _roll_target = constrain_float(fast_atan(accel_right*_ahrs.cos_pitch()/(GRAVITY_MSS * 100))*(18000/M_PI), -lean_angle_max, lean_angle_max);
+	// CHM - shall I remove _ahrs.cos_pitch()?
+	// CHM - removed
+
+	// CHM - note that the fast-atan only gives range between -45 to 45,
+	// Therefore only change the ANGLE_MAX is not effective. hardcode needed
+    _roll_target = constrain_float(fast_atan(accel_right/(GRAVITY_MSS * 100))*(18000/M_PI), -lean_angle_max, lean_angle_max);
     _pitch_target = constrain_float(fast_atan(-accel_forward/(GRAVITY_MSS * 100))*(18000/M_PI),-lean_angle_max, lean_angle_max);
 }
 
@@ -902,7 +915,10 @@ float AC_PosControl::calc_leash_length(float speed_cms, float accel_cms, float k
         leash_length = speed_cms / kP;
     }else{
         // leash length grows at sqrt of speed further out
-		// CHM - ???
+		// CHM - (accel_cms / (2.0f*kP*kP)) is defined as linear_distance. It is acctually the
+		// offset of the sqrt function from origin, which acts to smooth out the pos_to_vel response curve
+		//
+		// Theoritically, the leash_length as _pos_error will result in exactly _vel_desired == _speed_cms
         leash_length = (accel_cms / (2.0f*kP*kP)) + (speed_cms*speed_cms / (2.0f*accel_cms));
     }
 
