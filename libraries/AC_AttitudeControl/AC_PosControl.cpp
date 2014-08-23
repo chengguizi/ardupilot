@@ -138,7 +138,22 @@ void AC_PosControl::set_alt_target_from_climb_rate(float climb_rate_cms, float d
     // adjust desired alt if motors have not hit their limits
     // To-Do: add check of _limit.pos_up and _limit.pos_down?
     if ((climb_rate_cms<0 && !_motors.limit.throttle_lower) || (climb_rate_cms>0 && !_motors.limit.throttle_upper)) {
-        _pos_target.z += climb_rate_cms * dt;
+        
+		// CHM - Add acceleration limiting on z controller
+		float limited_climb_rate_cms;
+
+		if (!is_active_z())
+			limited_climb_rate_cms = climb_rate_cms;
+
+		if (climb_rate_cms > limited_climb_rate_cms + _accel_z_cms * dt)
+			limited_climb_rate_cms += _accel_z_cms * dt;
+		else if (climb_rate_cms < limited_climb_rate_cms - _accel_z_cms * dt)
+			limited_climb_rate_cms -= _accel_z_cms * dt;
+		else
+			limited_climb_rate_cms = climb_rate_cms;
+
+		_pos_target.z += limited_climb_rate_cms * dt;
+		//_pos_target.z += climb_rate_cms * dt;
     }
 }
 
@@ -725,6 +740,10 @@ void AC_PosControl::pos_to_rate_xy(bool use_desired_rate, float dt)
 		// CHM - _pos_target is acquired during case 0
         _pos_error.x = _pos_target.x - curr_pos.x;
         _pos_error.y = _pos_target.y - curr_pos.y;
+
+		// CHM - IMPORTANT, there is no safeguard to protect against sudden change in _pos_error
+		// this may cause excessive acceleration (rate of change of velocity) being commanded
+		// However, this may not be that critical, as there is a overall acceleration limit of 9800
 
         // constrain target position to within reasonable distance of current location
 		// CHM - the code below, using _leash to limit the _distance_to_target, will make sure

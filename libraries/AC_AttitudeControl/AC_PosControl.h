@@ -265,6 +265,8 @@ private:
             uint8_t reset_accel_to_throttle : 1;    // 1 if we should reset the accel_to_throttle step of the z-axis controller
             uint8_t freeze_ff_xy    : 1;    // 1 use to freeze feed forward during step updates
             uint8_t freeze_ff_z     : 1;    // 1 use to freeze feed forward during step updates
+			// CHM - Add flags
+			uint8_t reset_climb_rate_to_altitude_target : 1; // this is to reset the last rate of climb commanded. Used to control the climb acceleration.
     } _flags;
 
     // limit flags structure
