@@ -449,14 +449,15 @@ void AC_AttitudeControl::rate_controller_run()
 	float last_yaw = _motors.get_yaw();	// range -4500 ~ 4500
 	float curr_yaw = rate_bf_to_motor_yaw(_rate_bf_target.z); // range -4500 ~ 4500
 	
-	if (_dt != 0 && _yaw_pitch_decouple_k > 0.0)
+	if (_motors.armed() && _dt != 0.0f && _yaw_pitch_decouple_k > 0.0f)
 	{
-		pitch_decouple_factor = pitch_decouple_factor + 0.24*((curr_yaw - last_yaw) / _dt * _yaw_pitch_decouple_k - pitch_decouple_factor);
+		// CHM - the filter is set to 20hz, with 400hz time step
+		pitch_decouple_factor = pitch_decouple_factor + 0.24f*((curr_yaw - last_yaw) / _dt * _yaw_pitch_decouple_k - pitch_decouple_factor);
 		pitch_decouple_factor = abs(pitch_decouple_factor);
 	}
 		
 	else
-		pitch_decouple_factor =  0;
+		pitch_decouple_factor =  0.0f;
 
 	// chm - datalog of pitch decouple facotr value
 	Log_Write_Data(DATA_PITCH_DECOUPLE_FACTOR, pitch_decouple_factor);
@@ -607,6 +608,7 @@ void AC_AttitudeControl::update_rate_bf_targets()
     }
 
 	// CHM - ???? why --- update: the sign has been reversed in recent commit, question solved
+	// CHM - LOOKS LIKE THE UPDATE VERSION IS WRONG!!, THE SIGN SHOULD BE REVERSED
 	_rate_bf_target.x += _angle_bf_error.y * _ahrs.get_gyro().z;
 	_rate_bf_target.y += -_angle_bf_error.x * _ahrs.get_gyro().z;
 }

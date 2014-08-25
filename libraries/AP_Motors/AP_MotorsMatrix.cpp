@@ -155,6 +155,7 @@ void AP_MotorsMatrix::output_armed()
     }
 
     // capture desired roll, pitch, yaw and throttle from receiver
+	// CHM - for roll pitch yaw, pwm_out is set to 0.1* servo_out. range - 450 ~ +450
     _rc_roll.calc_pwm();
     _rc_pitch.calc_pwm();
     _rc_throttle.calc_pwm();
