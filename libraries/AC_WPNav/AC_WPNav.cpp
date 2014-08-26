@@ -344,6 +344,9 @@ void AC_WPNav::update_loiter()
 /// wp_and_spline_init - initialise straight line and spline waypoint controllers
 ///     updates target roll, pitch targets and I terms based on vehicle lean angles
 ///     should be called once before the waypoint controller is used but does not need to be called before subsequent updates to destination
+
+// CHM - used in AUTO, GUIDED, RTL
+
 void AC_WPNav::wp_and_spline_init()
 {
     // check _wp_accel_cms is reasonable
@@ -355,6 +358,7 @@ void AC_WPNav::wp_and_spline_init()
     _pos_control.init_xy_controller();
 
     // initialise position controller speed and acceleration
+	// CHM - WPNAV_SPEED
     _pos_control.set_speed_xy(_wp_speed_cms);
     _pos_control.set_accel_xy(_wp_accel_cms);
     _pos_control.set_speed_z(-_wp_speed_down_cms, _wp_speed_up_cms);
@@ -410,6 +414,7 @@ void AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
         _pos_delta_unit.y = 0;
         _pos_delta_unit.z = 0;
     }else{
+		// CHM - the component of the vector should all <= 1.0
         _pos_delta_unit = pos_delta/_track_length;
     }
 
@@ -460,9 +465,11 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
     Vector3f curr_delta = curr_pos - _origin;
 
     // calculate how far along the track we are
+	// CHM - Scalar projection
     track_covered = curr_delta.x * _pos_delta_unit.x + curr_delta.y * _pos_delta_unit.y + curr_delta.z * _pos_delta_unit.z;
 
     Vector3f track_covered_pos = _pos_delta_unit * track_covered;
+	// CHM - vector error
     track_error = curr_delta - track_covered_pos;
 
     // calculate the horizontal error
@@ -500,8 +507,10 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
 
     // calculate point at which velocity switches from linear to sqrt
     float linear_velocity = _wp_speed_cms;
+	// CHM - HLD_LAT_P
     float kP = _pos_control.get_pos_xy_kP();
-    if (kP >= 0.0f) {   // avoid divide by zero
+	// CHM - bug fix: replace >= to >
+    if (kP > 0.0f) {   // avoid divide by zero
         linear_velocity = _track_accel/kP;
     }
 
@@ -512,12 +521,16 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
     }else{
         // increase intermediate target point's velocity if not yet at the leash limit
         if(dt > 0 && !reached_leash_limit) {
-            _limited_speed_xy_cms += 2.0f * _track_accel * dt;
+			// CHM - WHY there is a coefficient 2.0 ???
+			// CHM - edit: delete 2.0f
+            _limited_speed_xy_cms += _track_accel * dt;
         }
         // do not allow speed to be below zero or over top speed
+		// CHM - should it be _track_speed * pos_delta_unit_xy ?
         _limited_speed_xy_cms = constrain_float(_limited_speed_xy_cms, 0.0f, _track_speed);
 
         // check if we should begin slowing down
+		// CHM - by default fast_waypoint is false, unless in spline
         if (!_flags.fast_waypoint) {
             float dist_to_dest = _track_length - _track_desired;
             if (!_flags.slowing_down && dist_to_dest <= _slow_down_dist) {
@@ -536,12 +549,14 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
     }
     // advance the current target
     if (!reached_leash_limit) {
+		// CHM - desired travelled distance, in scalar
     	_track_desired += _limited_speed_xy_cms * dt;
 
     	// reduce speed if we reach end of leash
         if (_track_desired > track_desired_max) {
         	_track_desired = track_desired_max;
-        	_limited_speed_xy_cms -= 2.0f * _track_accel * dt;
+			// CHM - edit: delete 2.0f
+        	_limited_speed_xy_cms -= _track_accel * dt;
         	if (_limited_speed_xy_cms < 0.0f) {
         	    _limited_speed_xy_cms = 0.0f;
         	}
@@ -556,6 +571,7 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
     }
 
     // recalculate the desired position
+	// CHM - set "_pos_target" here
     _pos_control.set_pos_target(_origin + _pos_delta_unit * _track_desired);
 
     // check if we've reached the waypoint
@@ -641,7 +657,7 @@ void AC_WPNav::calculate_wp_leash_length()
 
     float speed_z;
     float leash_z;
-    if (_pos_delta_unit.z >= 0) {
+    if (_pos_delta_unit.z >= 0.0f) {
         speed_z = _wp_speed_up_cms;
         leash_z = _pos_control.get_leash_up_z();
     }else{
@@ -650,18 +666,21 @@ void AC_WPNav::calculate_wp_leash_length()
     }
 
     // calculate the maximum acceleration, maximum velocity, and leash length in the direction of travel
-    if(pos_delta_unit_z == 0 && pos_delta_unit_xy == 0){
-        _track_accel = 0;
-        _track_speed = 0;
+    if(pos_delta_unit_z == 0.0f && pos_delta_unit_xy == 0.0f){
+        _track_accel = 0.0f;
+        _track_speed = 0.0f;
         _track_leash_length = WPNAV_LEASH_LENGTH_MIN;
-    }else if(_pos_delta_unit.z == 0){
-        _track_accel = _wp_accel_cms/pos_delta_unit_xy;
-        _track_speed = _wp_speed_cms/pos_delta_unit_xy;
-        _track_leash_length = _pos_control.get_leash_xy()/pos_delta_unit_xy;
-    }else if(pos_delta_unit_xy == 0){
-        _track_accel = _wp_accel_z_cms/pos_delta_unit_z;
-        _track_speed = speed_z/pos_delta_unit_z;
-        _track_leash_length = leash_z/pos_delta_unit_z;
+    }else if(_pos_delta_unit.z == 0.0f){
+		// CHM - pos_delta_unit_xy is the length of unit vector in the direction of track on XY plane
+		// interesting to note that it is / not * .
+		// CHM - clean the code
+        _track_accel = _wp_accel_cms;
+        _track_speed = _wp_speed_cms;
+        _track_leash_length = _pos_control.get_leash_xy();
+    }else if(pos_delta_unit_xy == 0.0f){
+        _track_accel = _wp_accel_z_cms;
+        _track_speed = speed_z;
+        _track_leash_length = leash_z;
     }else{
         _track_accel = min(_wp_accel_z_cms/pos_delta_unit_z, _wp_accel_cms/pos_delta_unit_xy);
         _track_speed = min(speed_z/pos_delta_unit_z, _wp_speed_cms/pos_delta_unit_xy);
