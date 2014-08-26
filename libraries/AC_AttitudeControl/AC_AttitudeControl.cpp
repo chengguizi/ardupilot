@@ -457,7 +457,11 @@ void AC_AttitudeControl::rate_controller_run()
 	}
 		
 	else
-		pitch_decouple_factor =  0.0f;
+	{
+		pitch_decouple_factor = 0.0f;
+		last_yaw = curr_yaw;
+	}
+		
 
 	// chm - datalog of pitch decouple facotr value
 	Log_Write_Data(DATA_PITCH_DECOUPLE_FACTOR, pitch_decouple_factor);
@@ -761,6 +765,7 @@ void AC_AttitudeControl::set_throttle_out(int16_t throttle_out, bool apply_angle
 // throttle value should be 0 ~ 1000
 int16_t AC_AttitudeControl::get_angle_boost(int16_t throttle_pwm)
 {
+	// CHM - refer to DCM rotation matrix pdf
     float temp = _ahrs.cos_pitch() * _ahrs.cos_roll();
     int16_t throttle_out;
 
