@@ -120,8 +120,10 @@ void AC_AttitudeControl::angle_ef_roll_pitch_rate_ef_yaw_smooth(float roll_angle
     float rate_change_limit;
 
     // sanity check smoothing gain
-	// CHM - smoothing_gain = rc_feel_rp = parameter 'RC_FEEL_RP'
+	// CHM - smoothing_gain != rc_feel_rp = parameter 'RC_FEEL_RP'
 	// Values: 0:Very Soft, 25:Soft, 50:Medium, 75:Crisp, 100:Very Crisp
+
+	//      smoothing_gain result is a number from 2 to 12 with 2 being very sluggish and 12 being very crisp
     smoothing_gain = constrain_float(smoothing_gain,1.0f,50.0f);
 
 	// CHM - _accel_rp_max is 'ACCEL_RP_MAX', the greater the crisper
@@ -490,7 +492,8 @@ void AC_AttitudeControl::rate_controller_run()
 void AC_AttitudeControl::frame_conversion_ef_to_bf(const Vector3f& ef_vector, Vector3f& bf_vector)
 {
     // convert earth frame rates to body frame rates
-    bf_vector.x = ef_vector.x - _ahrs.sin_pitch() * ef_vector.z;
+	// CHM -edit:
+    bf_vector.x = ( _ahrs.cos_pitch() ) * ef_vector.x - _ahrs.sin_pitch() * ef_vector.z;
     bf_vector.y = _ahrs.cos_roll()  * ef_vector.y + _ahrs.sin_roll() * _ahrs.cos_pitch() * ef_vector.z;
     bf_vector.z = -_ahrs.sin_roll() * ef_vector.y + _ahrs.cos_pitch() * _ahrs.cos_roll() * ef_vector.z;
 }
