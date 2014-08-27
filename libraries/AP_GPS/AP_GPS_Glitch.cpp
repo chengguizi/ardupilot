@@ -118,7 +118,7 @@ void GPS_Glitch::check_position()
 	
 	///////////////////////////
 	//////DEBUG Message////////
-	Vector2f locdiff = location_diff(curr_pos, gps_pos);
+	
 	/*
 	strcpy(mydebug.name,"Gl_cm_x");
 	mydebug.valuef = locdiff.x*100.0;
@@ -133,9 +133,14 @@ void GPS_Glitch::check_position()
 	debug_send_message(MSG_NAMED_VALUE_FLOAT);
 	///////////////////////////
 	*/
-	Log_Write_Data(DATA_GPS_LOCATION_DIFFERENCE_CM, (float)distance_cm);
-	Log_Write_Data(DATA_GPS_LOCATION_DIFFERENCE_X, (float)locdiff.x*100.0f);
-	Log_Write_Data(DATA_GPS_LOCATION_DIFFERENCE_Y, (float)locdiff.y*100.0f);
+	if (distance_cm > 20)
+	{
+		Log_Write_Data(DATA_GPS_LOCATION_DIFFERENCE_CM, (float)distance_cm);
+		Vector2f locdiff = location_diff(curr_pos, gps_pos);
+		Log_Write_Data(DATA_GPS_LOCATION_DIFFERENCE_X, (float)locdiff.x*100.0f);
+		Log_Write_Data(DATA_GPS_LOCATION_DIFFERENCE_Y, (float)locdiff.y*100.0f);
+	}
+	
 
 	if (distance_cm <= _radius_cm) {
         all_ok = true;

@@ -506,6 +506,7 @@ bool AC_AttitudeControl::frame_conversion_bf_to_ef(const Vector3f& bf_vector, Ve
         return false;
     }
     // convert earth frame angle or rates to body frame
+	// CHM - looks like there is some logic problem also, but these code not used.
     ef_vector.x = bf_vector.x + _ahrs.sin_roll() * (_ahrs.sin_pitch()/_ahrs.cos_pitch()) * bf_vector.y + _ahrs.cos_roll() * (_ahrs.sin_pitch()/_ahrs.cos_pitch()) * bf_vector.z;
     ef_vector.y = _ahrs.cos_roll()  * bf_vector.y - _ahrs.sin_roll() * bf_vector.z;
     ef_vector.z = (_ahrs.sin_roll() / _ahrs.cos_pitch()) * bf_vector.y + (_ahrs.cos_roll() / _ahrs.cos_pitch()) * bf_vector.z;
