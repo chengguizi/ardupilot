@@ -286,9 +286,10 @@ void AC_PosControl::pos_to_rate_z()
     }
 
     // check kP to avoid division by zero
+	// CHM - this should give out _vel_target.z <= _speed_up_cms or _speed_down_cms
     if (_p_alt_pos.kP() != 0.0f) {
         linear_distance = _accel_z_cms/(2.0f*_p_alt_pos.kP()*_p_alt_pos.kP());
-        if (_pos_error.z > 2*linear_distance ) {
+        if (_pos_error.z > 2.0f*linear_distance ) {
             _vel_target.z = safe_sqrt(2.0f*_accel_z_cms*(_pos_error.z-linear_distance));
         }else if (_pos_error.z < -2.0f*linear_distance) {
             _vel_target.z = -safe_sqrt(2.0f*_accel_z_cms*(-_pos_error.z-linear_distance));
@@ -356,6 +357,7 @@ void AC_PosControl::rate_to_accel_z()
     }
 
     // calculate p
+	// CHM - THR_RATE_P
     p = _p_alt_rate.kP() * _vel_error.z;
 
     // consolidate and constrain target acceleration
@@ -388,6 +390,7 @@ void AC_PosControl::accel_to_throttle(float accel_target_z)
     }
 
     // separately calculate p, i, d values for logging
+	//CHM - THR_ACCEL_ PID
     p = _pid_alt_accel.get_p(_accel_error.z);
 
     // get i term

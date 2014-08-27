@@ -552,16 +552,19 @@ float get_auto_heading(void)
         return get_roi_yaw();
         break;
 
+		// CHM - only triggered by MAVLink, ignore this
     case AUTO_YAW_LOOK_AT_HEADING:
         // keep heading pointing in the direction held in yaw_look_at_heading with no pilot input allowed
         return yaw_look_at_heading;
         break;
 
+		// CHM - follow gps path
     case AUTO_YAW_LOOK_AHEAD:
         // Commanded Yaw to automatically look ahead.
         return get_look_ahead_yaw();
         break;
 
+		// CHM - only used in RTL
     case AUTO_YAW_RESETTOARMEDYAW:
         // changes yaw to be same as when quad was armed
         return initial_armed_bearing;
@@ -571,6 +574,7 @@ float get_auto_heading(void)
     default:
         // point towards next waypoint.
         // we don't use wp_bearing because we don't want the copter to turn too much during flight
+		// CHM - no damping for normal waypoint, only implement minimum distance between waypoints
         return wp_nav.get_yaw();
         break;
     }

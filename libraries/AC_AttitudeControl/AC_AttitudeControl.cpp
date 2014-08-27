@@ -237,6 +237,7 @@ void AC_AttitudeControl::angle_ef_roll_pitch_rate_ef_yaw(float roll_angle_ef, fl
     _angle_ef_target.y = constrain_float(pitch_angle_ef, -_aparm.angle_max, _aparm.angle_max);
     angle_ef_error.y = wrap_180_cd_float(_angle_ef_target.y - _ahrs.pitch_sensor);
 
+	// CHM - only yaw is limited by _accel_y_max, ACCEL_Y_MAX 
     if (_accel_y_max > 0.0f) {
         // set earth-frame feed forward rate for yaw
         float rate_change_limit = _accel_y_max * _dt;
@@ -245,6 +246,7 @@ void AC_AttitudeControl::angle_ef_roll_pitch_rate_ef_yaw(float roll_angle_ef, fl
         rate_change = constrain_float(rate_change, -rate_change_limit, rate_change_limit);
         _rate_ef_desired.z += rate_change;
         // calculate yaw target angle and angle error
+		// CHM - output _angle_ef_target.z   and   angle_ef_error.
         update_ef_yaw_angle_and_error(_rate_ef_desired.z, angle_ef_error, AC_ATTITUDE_RATE_STAB_YAW_OVERSHOOT_ANGLE_MAX);
     } else {
         // set yaw feed forward to zero
@@ -260,7 +262,7 @@ void AC_AttitudeControl::angle_ef_roll_pitch_rate_ef_yaw(float roll_angle_ef, fl
     update_rate_bf_targets();
 
     // set roll and pitch feed forward to zero
-	// CHM - _rate_ef_desired.z is NOT set to zero. WHY???
+	// CHM - _rate_ef_desired.z is the only one that updates. This add yaw rate into the _rate_bf_target
     _rate_ef_desired.x = 0;
     _rate_ef_desired.y = 0;
     // convert earth-frame feed forward rates to body-frame feed forward rates
@@ -461,7 +463,6 @@ void AC_AttitudeControl::rate_controller_run()
 	else
 	{
 		pitch_decouple_factor = 0.0f;
-		last_yaw = curr_yaw;
 	}
 		
 
@@ -595,6 +596,7 @@ void AC_AttitudeControl::update_rate_bf_targets()
 	// CHM - this is the parameter Stabilize Roll
     _rate_bf_target.x = _p_angle_roll.kP() * _angle_bf_error.x;
     // constrain roll rate request
+	// CHM - always true, except some part of AUTOTUNE
     if (_flags.limit_angle_to_rate_request) {
 		// CHM - _angle_rate_rp_max == ATC_RATE_RP_MAX
         _rate_bf_target.x = constrain_float(_rate_bf_target.x,-_angle_rate_rp_max,_angle_rate_rp_max);
