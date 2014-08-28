@@ -163,6 +163,7 @@ void AP_Mission::truncate(uint16_t index)
 
 /// update - ensures the command queues are loaded with the next command and calls main programs command_init and command_verify functions to progress the mission
 ///     should be called at 10hz or higher
+// CHM - update at 10hz, in auto mode
 void AP_Mission::update()
 {
     // exit immediately if not running or no mission commands

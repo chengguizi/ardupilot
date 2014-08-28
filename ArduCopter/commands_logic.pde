@@ -47,6 +47,7 @@ static bool start_command(const AP_Mission::Mission_Command& cmd)
         break;
 
     case MAV_CMD_NAV_WAYPOINT:                  // 16  Navigate to Waypoint
+		// CHM - place to start a new mission
         do_nav_wp(cmd);
         break;
 
@@ -336,6 +337,7 @@ static void do_nav_wp(const AP_Mission::Mission_Command& cmd)
     auto_wp_start(local_pos);
     // if no delay set the waypoint as "fast"
     if (loiter_time_max == 0 ) {
+		// CHM - so vertually all the waypoint is fast waypoint.
         wp_nav.set_fast_waypoint(true);
     }
 }
