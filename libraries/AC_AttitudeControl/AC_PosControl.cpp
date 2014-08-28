@@ -140,7 +140,8 @@ void AC_PosControl::set_alt_target_from_climb_rate(float climb_rate_cms, float d
     if ((climb_rate_cms<0 && !_motors.limit.throttle_lower) || (climb_rate_cms>0 && !_motors.limit.throttle_upper)) {
         
 		// CHM - Add acceleration limiting on z controller
-		float limited_climb_rate_cms;
+		// CHM - bug fix: althold never change altitude
+		static float limited_climb_rate_cms;
 
 		if (!is_active_z())
 			limited_climb_rate_cms = climb_rate_cms;
