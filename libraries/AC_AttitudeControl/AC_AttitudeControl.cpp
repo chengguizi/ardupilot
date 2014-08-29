@@ -4,6 +4,8 @@
 #include <AP_HAL.h>
 #include "../ArduCopter/Debug_CHM.h"
 
+extern const AP_HAL::HAL& hal; // for debug
+
 // table of user settable parameters
 const AP_Param::GroupInfo AC_AttitudeControl::var_info[] PROGMEM = {
 
@@ -466,7 +468,14 @@ void AC_AttitudeControl::rate_controller_run()
 		
 
 	// chm - datalog of pitch decouple facotr value
-	Log_Write_Data(DATA_PITCH_DECOUPLE_FACTOR, pitch_decouple_factor);
+	if (pitch_decouple_factor > 10.0f)
+	{
+		hal.uartC->printf_P(PSTR("DecoupleK:%f\n"), pitch_decouple_factor);
+		Log_Write_Data(DATA_PITCH_DECOUPLE_FACTOR, pitch_decouple_factor);
+	}
+	else
+		pitch_decouple_factor = 0.0f;
+	
 
 	_motors.set_yaw(curr_yaw);
 	_motors.set_pitch(
@@ -779,6 +788,9 @@ int16_t AC_AttitudeControl::get_angle_boost(int16_t throttle_pwm)
     int16_t throttle_out;
 
     temp = constrain_float(temp, 0.5f, 1.0f);
+
+	// CHM - add abit more compensation for thrttle
+	temp = (float)powf(temp, 1.15); // need to test the value of the exponent
 
     // reduce throttle if we go inverted
     temp = constrain_float(9000-max(labs(_ahrs.roll_sensor),labs(_ahrs.pitch_sensor)), 0, 3000) / (3000 * temp);

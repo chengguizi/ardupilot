@@ -2,6 +2,14 @@
 #include <AP_HAL.h>
 #include <AC_WPNav.h>
 
+/////////
+#include <GCS.h> //added
+// CHM - debugging
+#include "../ArduCopter/Debug_CHM.h"
+extern debug_s mydebug;
+void debug_send_message(enum ap_message id);
+////////
+
 extern const AP_HAL::HAL& hal;
 
 const AP_Param::GroupInfo AC_WPNav::var_info[] PROGMEM = {
@@ -359,12 +367,12 @@ void AC_WPNav::wp_and_spline_init()
 
     // initialise position controller speed and acceleration
 	// CHM - WPNAV_SPEED
-    _pos_control.set_speed_xy(_wp_speed_cms);
-    _pos_control.set_accel_xy(_wp_accel_cms);
-    _pos_control.set_speed_z(-_wp_speed_down_cms, _wp_speed_up_cms);
-    _pos_control.set_accel_z(_wp_accel_z_cms);
-    _pos_control.calc_leash_length_xy();
-    _pos_control.calc_leash_length_z();
+    _pos_control.set_speed_xy(_wp_speed_cms); // _speed_cms
+    _pos_control.set_accel_xy(_wp_accel_cms); // _accel_cms
+    _pos_control.set_speed_z(-_wp_speed_down_cms, _wp_speed_up_cms); // _speed_down_cms _speed_up_cms
+    _pos_control.set_accel_z(_wp_accel_z_cms); //_accel_z_cms
+    _pos_control.calc_leash_length_xy(); //_leash
+    _pos_control.calc_leash_length_z(); //_leash_up_z _leash_down_z
 }
 
 /// set_speed_xy - allows main code to pass target horizontal velocity for wp navigation
@@ -419,6 +427,7 @@ void AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
     }
 
     // calculate leash lengths
+	// CHM - initialising leash for WP
     calculate_wp_leash_length();
 
     // initialise yaw heading
@@ -433,7 +442,7 @@ void AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
     _pos_control.set_pos_target(origin);
     _track_desired = 0;             // target is at beginning of track
     _flags.reached_destination = false;
-    _flags.fast_waypoint = false;   // default waypoint back to slow
+    _flags.fast_waypoint = false;   // default waypoint back to slow // CHM - default fast_waypoint mode
     _flags.slowing_down = false;    // target is not slowing down yet
     _flags.segment_type = SEGMENT_STRAIGHT;
     _flags.new_wp_destination = true;   // flag new waypoint so we can freeze the pos controller's feed forward and smooth the transition
@@ -462,14 +471,15 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
 
     // get current location
     Vector3f curr_pos = _inav.get_position();
+	// CHM - Relative position of UAV to the last waypoint
     Vector3f curr_delta = curr_pos - _origin;
 
     // calculate how far along the track we are
-	// CHM - Scalar projection
+	// CHM - Scalar projection,length of track consider covered
     track_covered = curr_delta.x * _pos_delta_unit.x + curr_delta.y * _pos_delta_unit.y + curr_delta.z * _pos_delta_unit.z;
 
     Vector3f track_covered_pos = _pos_delta_unit * track_covered;
-	// CHM - vector error
+	// CHM - vector error, from UAV to the point on the track
     track_error = curr_delta - track_covered_pos;
 
     // calculate the horizontal error
@@ -479,6 +489,7 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
     float track_error_z = fabsf(track_error.z);
 
     // get position control leash lengths
+	// CHM - _pos_control._leash
     float leash_xy = _pos_control.get_leash_xy();
     float leash_z;
     if (track_error.z >= 0) {
@@ -488,8 +499,11 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
     }
 
     // calculate how far along the track we could move the intermediate target before reaching the end of the leash
-    track_leash_slack = min(_track_leash_length*(leash_z-track_error_z)/leash_z, _track_leash_length*(leash_xy-track_error_xy)/leash_xy);
-    if (track_leash_slack < 0) {
+	// CHM - _track_leash_length
+	// CHM - change the way to finde track_leash_slack
+    //track_leash_slack = min(_track_leash_length*(leash_z-track_error_z)/leash_z, _track_leash_length*(leash_xy-track_error_xy)/leash_xy);
+	track_leash_slack = _track_leash_length - track_error_z - track_error_xy;
+	if (track_leash_slack < 0) {
         track_desired_max = track_covered;
     }else{
         track_desired_max = track_covered + track_leash_slack;
@@ -517,7 +531,8 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
     // let the limited_speed_xy_cms be some range above or below current velocity along track
     if (speed_along_track < -linear_velocity) {
         // we are traveling fast in the opposite direction of travel to the waypoint so do not move the intermediate point
-        _limited_speed_xy_cms = 0;
+        // CHM - the term xy is misleading. It is actually speed along the track
+		_limited_speed_xy_cms = 0;
     }else{
         // increase intermediate target point's velocity if not yet at the leash limit
         if(dt > 0 && !reached_leash_limit) {
@@ -526,11 +541,11 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
             _limited_speed_xy_cms += _track_accel * dt;
         }
         // do not allow speed to be below zero or over top speed
-		// CHM - should it be _track_speed * pos_delta_unit_xy ?
+		// CHM - should it be _track_speed * pos_delta_unit_xy ? no
         _limited_speed_xy_cms = constrain_float(_limited_speed_xy_cms, 0.0f, _track_speed);
 
         // check if we should begin slowing down
-		// CHM - by default fast_waypoint is false, unless in spline
+		// CHM - by default fast_waypoint is ture, as long as there is no delay
         if (!_flags.fast_waypoint) {
             float dist_to_dest = _track_length - _track_desired;
             if (!_flags.slowing_down && dist_to_dest <= _slow_down_dist) {
@@ -543,9 +558,11 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
         }
 
         // if our current velocity is within the linear velocity range limit the intermediate point's velocity to be no more than the linear_velocity above or below our current velocity
-        if (fabsf(speed_along_track) < linear_velocity) {
+        // CHM - this make sure the difference of _limited_speed_xy_cms and actual speed difference is within response range?
+		// CHM - deleting this will make UAV accelerate faster
+		/*if (fabsf(speed_along_track) < linear_velocity) {
             _limited_speed_xy_cms = constrain_float(_limited_speed_xy_cms,speed_along_track-linear_velocity,speed_along_track+linear_velocity);
-        }
+        }*/
     }
     // advance the current target
     if (!reached_leash_limit) {
@@ -569,6 +586,18 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
     } else {
         _track_desired = constrain_float(_track_desired, 0, _track_length + WPNAV_WP_FAST_OVERSHOOT_MAX);
     }
+
+	/// DEBUG _track_desired
+	static int i;
+	if (i < 0 || i >= 25)
+	{
+		i = 0;
+		hal.uartC->printf_P(PSTR("_track_desired = %f, _track_length = %f" ), _track_desired, _track_length);
+	}
+	else
+		i++;
+	/// end debug _track_desired
+
 
     // recalculate the desired position
 	// CHM - set "_pos_target" here
@@ -682,9 +711,28 @@ void AC_WPNav::calculate_wp_leash_length()
         _track_speed = speed_z;
         _track_leash_length = leash_z;
     }else{
-        _track_accel = min(_wp_accel_z_cms/pos_delta_unit_z, _wp_accel_cms/pos_delta_unit_xy);
-        _track_speed = min(speed_z/pos_delta_unit_z, _wp_speed_cms/pos_delta_unit_xy);
-        _track_leash_length = min(leash_z/pos_delta_unit_z, _pos_control.get_leash_xy()/pos_delta_unit_xy);
+
+		// CHM - add
+		float elevation_angle = degrees(fast_atan2(pos_delta_unit_z, pos_delta_unit_xy));
+		elevation_angle = constrain_float(elevation_angle, 0.0f, 90.0f);
+		float z_fraction = elevation_angle / 90.0f;
+		float xy_fraction = 1.0f - z_fraction;
+
+		// CHM - this algorithm may create too much acceleration during flying at an upward angle
+        //_track_accel = min(_wp_accel_z_cms/pos_delta_unit_z, _wp_accel_cms/pos_delta_unit_xy);
+        //_track_speed = min(speed_z/pos_delta_unit_z, _wp_speed_cms/pos_delta_unit_xy);
+        //_track_leash_length = min(leash_z/pos_delta_unit_z, _pos_control.get_leash_xy()/pos_delta_unit_xy);
+
+		_track_accel = _wp_accel_z_cms * z_fraction + _wp_accel_cms * xy_fraction;
+		_track_speed = speed_z * z_fraction + _wp_speed_cms * xy_fraction;
+		_track_leash_length = leash_z * z_fraction + _pos_control.get_leash_xy() * xy_fraction;
+
+		// CHM - debug message
+		hal.uartC->printf_P(PSTR("New Track: a=%f, v=%f, l=%f\n"), _track_accel, _track_speed, _track_leash_length);
+		Log_Write_Data(DATA_WP_TRACK, _track_accel);
+		Log_Write_Data(DATA_WP_TRACK, _track_speed);
+		Log_Write_Data(DATA_WP_TRACK, _track_leash_length);
+
     }
 
     // calculate slow down distance (the distance from the destination when the target point should begin to slow down)

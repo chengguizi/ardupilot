@@ -135,6 +135,7 @@ void GPS_Glitch::check_position()
 	*/
 	if (distance_cm > 20)
 	{
+		hal.uartC->printf_P(PSTR("GPS difference:%f"),distance_cm);
 		Log_Write_Data(DATA_GPS_LOCATION_DIFFERENCE_CM, (float)distance_cm);
 		Vector2f locdiff = location_diff(curr_pos, gps_pos);
 		Log_Write_Data(DATA_GPS_LOCATION_DIFFERENCE_X, (float)locdiff.x*100.0f);
