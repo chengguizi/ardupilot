@@ -39,6 +39,7 @@
 #define AP_MOTORS_V_FRAME           2
 #define AP_MOTORS_H_FRAME           3   // same as X frame but motors spin in opposite direction
 #define AP_MOTORS_VTAIL_FRAME       4   // Lynxmotion Hunter VTail 400/500
+#define AP_MOTORS_ATAIL_FRAME       5   // A-Shaped VTail Quads
 #define AP_MOTORS_NEW_PLUS_FRAME    10  // NEW frames are same as original 4 but with motor orders changed to be clockwise from the front
 #define AP_MOTORS_NEW_X_FRAME       11
 #define AP_MOTORS_NEW_V_FRAME       12
@@ -106,7 +107,7 @@ public:
     void                set_throttle(int16_t throttle_in) { _rc_throttle.servo_out = throttle_in; };    // range 0 ~ 1000
 
     // get_throttle_out - returns throttle sent to motors in the range 0 ~ 1000
-    int16_t             get_throttle_out() { return _rc_throttle.servo_out; }
+    int16_t             get_throttle_out() const { return _rc_throttle.servo_out; }
 
     // output - sends commands to the motors
     void                output();
@@ -173,7 +174,7 @@ protected:
     AP_Int8             _throttle_curve_enabled;        // enable throttle curve
     AP_Int8             _throttle_curve_mid;    // throttle which produces 1/2 the maximum thrust.  expressed as a percentage (i.e. 0 ~ 100 ) of the full throttle range
     AP_Int8             _throttle_curve_max;    // throttle which produces the maximum thrust.  expressed as a percentage (i.e. 0 ~ 100 ) of the full throttle range
-    AP_Int16            _spin_when_armed;       // used to control whether the motors always spin when armed.  pwm value above radio_min 
+    AP_Int16            _spin_when_armed;       // used to control whether the motors always spin when armed.  pwm value above radio_min
 
     // internal variables
     RC_Channel&         _rc_roll;               // roll input in from users is held in servo_out

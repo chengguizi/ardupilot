@@ -23,6 +23,7 @@
 #include <SITL.h>
 #include <Filter.h>
 #include <AP_Param.h>
+#include <StorageManager.h>
 #include <AP_Progmem.h>
 #include <AP_Math.h>
 #include <AP_AHRS.h>
@@ -31,6 +32,8 @@
 #include <AP_Vehicle.h>
 #include <AP_Mission.h>
 #include <AP_Terrain.h>
+#include <AP_BattMonitor.h>
+#include <AP_Rally.h>
 #include <AP_ADC_AnalogSource.h>
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;

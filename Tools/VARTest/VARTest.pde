@@ -14,6 +14,7 @@
 #include <AP_HAL.h>
 #include <AP_Menu.h>
 #include <AP_Param.h>
+#include <StorageManager.h>
 #include <AP_GPS.h>         // ArduPilot GPS library
 #include <AP_Baro.h>        // ArduPilot barometer library
 #include <AP_Compass.h>     // ArduPilot Mega Magnetometer Library
@@ -33,7 +34,9 @@
 #include <AP_Airspeed.h>
 #include <AP_Vehicle.h>
 #include <AP_Mission.h>
+#include <AP_Rally.h>
 #include <AP_Terrain.h>
+#include <AP_BattMonitor.h>
 #include <AP_SpdHgtControl.h>
 #include <memcheck.h>
 #include <AP_RCMapper.h>
@@ -63,7 +66,7 @@ const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 // constructor runs before the constructors of the other AP_Param
 // variables
 extern const AP_Param::Info var_info[];
-AP_Param param_loader(var_info, WP_START_BYTE);
+AP_Param param_loader(var_info);
 
 static Parameters g;
 

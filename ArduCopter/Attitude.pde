@@ -100,8 +100,8 @@ static void update_thr_cruise()
     if (throttle > g.throttle_min && abs(climb_rate) < 60 && labs(ahrs.roll_sensor) < 500 && labs(ahrs.pitch_sensor) < 500) {
         throttle_avg = throttle_avg * 0.99f + (float)throttle * 0.01f;
         g.throttle_cruise = throttle_avg;
-    // update position controller
-    pos_control.set_throttle_hover(throttle_avg);
+        // update position controller
+        pos_control.set_throttle_hover(throttle_avg);
     }
 }
 
@@ -151,8 +151,8 @@ static int16_t get_pilot_desired_throttle(int16_t throttle_control)
 // get_pilot_desired_climb_rate - transform pilot's throttle input to
 // climb rate in cm/s.  we use radio_in instead of control_in to get the full range
 // without any deadzone at the bottom
-#define THROTTLE_IN_DEADBAND_TOP (THROTTLE_IN_MIDDLE+THROTTLE_IN_DEADBAND)  // top of the deadband
-#define THROTTLE_IN_DEADBAND_BOTTOM (THROTTLE_IN_MIDDLE-THROTTLE_IN_DEADBAND)  // bottom of the deadband
+#define THROTTLE_IN_DEADBAND_TOP (THROTTLE_IN_MIDDLE+g.throttle_deadzone)  // top of the deadband
+#define THROTTLE_IN_DEADBAND_BOTTOM (THROTTLE_IN_MIDDLE-g.throttle_deadzone)  // bottom of the deadband
 static int16_t get_pilot_desired_climb_rate(int16_t throttle_control)
 {
     int16_t desired_rate = 0;
@@ -168,10 +168,10 @@ static int16_t get_pilot_desired_climb_rate(int16_t throttle_control)
     // check throttle is above, below or in the deadband
     if (throttle_control < THROTTLE_IN_DEADBAND_BOTTOM) {
         // below the deadband
-        desired_rate = (int32_t)g.pilot_velocity_z_max * (throttle_control-THROTTLE_IN_DEADBAND_BOTTOM) / (THROTTLE_IN_MIDDLE - THROTTLE_IN_DEADBAND);
+        desired_rate = (int32_t)g.pilot_velocity_z_max * (throttle_control-THROTTLE_IN_DEADBAND_BOTTOM) / (THROTTLE_IN_MIDDLE - g.throttle_deadzone);
     }else if (throttle_control > THROTTLE_IN_DEADBAND_TOP) {
         // above the deadband
-        desired_rate = (int32_t)g.pilot_velocity_z_max * (throttle_control-THROTTLE_IN_DEADBAND_TOP) / (THROTTLE_IN_MIDDLE - THROTTLE_IN_DEADBAND);
+        desired_rate = (int32_t)g.pilot_velocity_z_max * (throttle_control-THROTTLE_IN_DEADBAND_TOP) / (THROTTLE_IN_MIDDLE - g.throttle_deadzone);
     }else{
         // must be in the deadband
         desired_rate = 0;
@@ -234,7 +234,7 @@ static float get_throttle_surface_tracking(int16_t target_rate, float current_al
     uint32_t now = millis();
 
     // reset target altitude if this controller has just been engaged
-    if( now - last_call_ms > 200 ) {
+    if (now - last_call_ms > SONAR_TIMEOUT_MS) {
         target_sonar_alt = sonar_alt + current_alt_target - current_loc.alt;
     }
     last_call_ms = now;

@@ -2,9 +2,6 @@
 
 #include "AC_AttitudeControl.h"
 #include <AP_HAL.h>
-#include "../ArduCopter/Debug_CHM.h"
-
-extern const AP_HAL::HAL& hal;
 
 // table of user settable parameters
 const AP_Param::GroupInfo AC_AttitudeControl::var_info[] PROGMEM = {
@@ -44,7 +41,6 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] PROGMEM = {
     // @Increment: 1000
     // @Values: 0:Disabled, 72000:Slow, 108000:Medium, 162000:Fast
     // @User: Advanced
-	// @CHM: the parameter that used in stabilize_run()
     AP_GROUPINFO("ACCEL_RP_MAX", 3, AC_AttitudeControl, _accel_rp_max, AC_ATTITUDE_CONTROL_ACCEL_RP_MAX_DEFAULT),
 
     // @Param: ACCEL_Y_MAX
@@ -64,16 +60,6 @@ const AP_Param::GroupInfo AC_AttitudeControl::var_info[] PROGMEM = {
     // @User: Advanced
     AP_GROUPINFO("RATE_FF_ENAB", 5, AC_AttitudeControl, _rate_bf_ff_enabled, AC_ATTITUDE_CONTROL_RATE_BF_FF_DEFAULT),
 
-#ifdef USE_MY_FRAME
-	// @Param: YAW_PITCH_K
-	// @DisplayName: Yaw Pitch Decoupling factor
-	// @Description: Controls how much pitch up correction is applied, when the UAV is accelerating in yaw axis.
-	// @User: Advanced
-	AP_GROUPINFO("YAW_PITCH_K", 6, AC_AttitudeControl, _yaw_pitch_decouple_k, 0),
-#endif // USE_MY_FRAME
-
-
-
     AP_GROUPEND
 };
 
@@ -85,10 +71,19 @@ void AC_AttitudeControl::set_dt(float delta_sec)
 {
     _dt = delta_sec;
 
+    // get filter from ahrs
+    const AP_InertialSensor &ins = _ahrs.get_ins();
+    float ins_filter = (float)ins.get_filter();
+
+    // sanity check filter
+    if (ins_filter <= 0.0f) {
+        ins_filter = AC_ATTITUDE_RATE_RP_PID_DTERM_FILTER;
+    }
+
     // set attitude controller's D term filters
-    _pid_rate_roll.set_d_lpf_alpha(AC_ATTITUDE_RATE_RP_PID_DTERM_FILTER, _dt);
-    _pid_rate_pitch.set_d_lpf_alpha(AC_ATTITUDE_RATE_RP_PID_DTERM_FILTER, _dt);
-    _pid_rate_yaw.set_d_lpf_alpha(AC_ATTITUDE_RATE_Y_PID_DTERM_FILTER, _dt);
+    _pid_rate_roll.set_d_lpf_alpha(ins_filter, _dt);
+    _pid_rate_pitch.set_d_lpf_alpha(ins_filter, _dt);
+    _pid_rate_yaw.set_d_lpf_alpha(ins_filter/2.0f, _dt);  // half
 }
 
 // relax_bf_rate_controller - ensure body-frame rate controller has zero errors to relax rate controller output
@@ -111,14 +106,8 @@ void AC_AttitudeControl::angle_ef_roll_pitch_rate_ef_yaw_smooth(float roll_angle
     float rate_change_limit;
 
     // sanity check smoothing gain
-	// CHM - smoothing_gain = rc_feel_rp = parameter 'RC_FEEL_RP'
-	// Values: 0:Very Soft, 25:Soft, 50:Medium, 75:Crisp, 100:Very Crisp
     smoothing_gain = constrain_float(smoothing_gain,1.0f,50.0f);
 
-	// CHM - _accel_rp_max is 'ACCEL_RP_MAX', the greater the crisper
-	// Values: 36000:Very Soft, 54000:Soft, 90000:Medium, 126000:Crisp, 162000:Very Crisp
-	// DisplayName: Acceleration Max for Roll/Pitch
-	// but unit???
     float linear_angle = _accel_rp_max/(smoothing_gain*smoothing_gain);
     rate_change_limit = _accel_rp_max * _dt;
     float rate_ef_desired;
@@ -135,12 +124,9 @@ void AC_AttitudeControl::angle_ef_roll_pitch_rate_ef_yaw_smooth(float roll_angle
     	} else {
     		rate_ef_desired = smoothing_gain*angle_to_target;
     	}
-		// CHM - limit the '_rate_ef_desired' so it do not change so fast (range of -rate_change_limit ~ +rate_change_limit)
     	_rate_ef_desired.x = constrain_float(rate_ef_desired, _rate_ef_desired.x-rate_change_limit, _rate_ef_desired.x+rate_change_limit);
 
     	// update earth-frame roll angle target using desired roll rate
-		// CHM - _rate_ef_desired is purely based on change of command input, no input from sensor
-		// CHM - in the function below _angle_ef_target and angle_ef_error is updated
         update_ef_roll_angle_and_error(_rate_ef_desired.x, angle_ef_error, AC_ATTITUDE_RATE_STAB_ROLL_OVERSHOOT_ANGLE_MAX);
 
     	// calculate earth-frame feed forward pitch rate using linear response when close to the target, sqrt response when we're further away
@@ -219,7 +205,6 @@ void AC_AttitudeControl::angle_ef_roll_pitch_rate_ef_yaw(float roll_angle_ef, fl
     Vector3f    angle_ef_error;         // earth frame angle errors
 
     // set earth-frame angle targets for roll and pitch and calculate angle error
-	// CHM - x is roll, y is pitch, z is yaw, of the body
     _angle_ef_target.x = constrain_float(roll_angle_ef, -_aparm.angle_max, _aparm.angle_max);
     angle_ef_error.x = wrap_180_cd_float(_angle_ef_target.x - _ahrs.roll_sensor);
 
@@ -249,7 +234,6 @@ void AC_AttitudeControl::angle_ef_roll_pitch_rate_ef_yaw(float roll_angle_ef, fl
     update_rate_bf_targets();
 
     // set roll and pitch feed forward to zero
-	// CHM - _rate_ef_desired.z is NOT set to zero. WHY???
     _rate_ef_desired.x = 0;
     _rate_ef_desired.y = 0;
     // convert earth-frame feed forward rates to body-frame feed forward rates
@@ -352,51 +336,16 @@ void AC_AttitudeControl::rate_bf_roll_pitch_yaw(float roll_rate_bf, float pitch_
 {
     Vector3f    angle_ef_error;
 
-    // Update angle error
-    if (labs(_ahrs.pitch_sensor)<_acro_angle_switch) {
-        _acro_angle_switch = 6000;
-        // convert body-frame rates to earth-frame rates
-        frame_conversion_bf_to_ef(_rate_bf_desired, _rate_ef_desired);
-
-        // update earth frame angle targets and errors
-        update_ef_roll_angle_and_error(_rate_ef_desired.x, angle_ef_error, AC_ATTITUDE_RATE_STAB_ACRO_OVERSHOOT_ANGLE_MAX);
-        update_ef_pitch_angle_and_error(_rate_ef_desired.y, angle_ef_error, AC_ATTITUDE_RATE_STAB_ACRO_OVERSHOOT_ANGLE_MAX);
-        update_ef_yaw_angle_and_error(_rate_ef_desired.z, angle_ef_error, AC_ATTITUDE_RATE_STAB_ACRO_OVERSHOOT_ANGLE_MAX);
-
-        // convert earth-frame angle errors to body-frame angle errors
-        frame_conversion_ef_to_bf(angle_ef_error, _angle_bf_error);
-    } else {
-        _acro_angle_switch = 4500;
-        integrate_bf_rate_error_to_angle_errors();
-        frame_conversion_bf_to_ef(_angle_bf_error, angle_ef_error);
-        _angle_ef_target.x = wrap_180_cd_float(angle_ef_error.x + _ahrs.roll_sensor);
-        _angle_ef_target.y = wrap_180_cd_float(angle_ef_error.y + _ahrs.pitch_sensor);
-        _angle_ef_target.z = wrap_360_cd_float(angle_ef_error.z + _ahrs.yaw_sensor);
-        if (_angle_ef_target.y > 9000.0f) {
-            _angle_ef_target.x = wrap_180_cd_float(_angle_ef_target.x + 18000.0f);
-            _angle_ef_target.y = wrap_180_cd_float(18000.0f - _angle_ef_target.x);
-            _angle_ef_target.z = wrap_360_cd_float(_angle_ef_target.z + 18000.0f);
-        }
-        if (_angle_ef_target.y < -9000.0f) {
-            _angle_ef_target.x = wrap_180_cd_float(_angle_ef_target.x + 18000.0f);
-            _angle_ef_target.y = wrap_180_cd_float(-18000.0f - _angle_ef_target.x);
-            _angle_ef_target.z = wrap_360_cd_float(_angle_ef_target.z + 18000.0f);
-        }
-    }
-
-    // convert body-frame angle errors to body-frame rate targets
-    update_rate_bf_targets();
-
     float rate_change, rate_change_limit;
 
-    // update the rate feed forward with angular acceleration limits 
+    // update the rate feed forward with angular acceleration limits
     if (_accel_rp_max > 0.0f) {
     	rate_change_limit = _accel_rp_max * _dt;
 
     	rate_change = roll_rate_bf - _rate_bf_desired.x;
     	rate_change = constrain_float(rate_change, -rate_change_limit, rate_change_limit);
     	_rate_bf_desired.x += rate_change;
-    
+
     	rate_change = pitch_rate_bf - _rate_bf_desired.y;
     	rate_change = constrain_float(rate_change, -rate_change_limit, rate_change_limit);
     	_rate_bf_desired.y += rate_change;
@@ -415,6 +364,42 @@ void AC_AttitudeControl::rate_bf_roll_pitch_yaw(float roll_rate_bf, float pitch_
     	_rate_bf_desired.z = yaw_rate_bf;
     }
 
+    // Update angle error
+    if (labs(_ahrs.pitch_sensor)<_acro_angle_switch) {
+        _acro_angle_switch = 6000;
+        // convert body-frame rates to earth-frame rates
+        frame_conversion_bf_to_ef(_rate_bf_desired, _rate_ef_desired);
+
+        // update earth frame angle targets and errors
+        update_ef_roll_angle_and_error(_rate_ef_desired.x, angle_ef_error, AC_ATTITUDE_RATE_STAB_ACRO_OVERSHOOT_ANGLE_MAX);
+        update_ef_pitch_angle_and_error(_rate_ef_desired.y, angle_ef_error, AC_ATTITUDE_RATE_STAB_ACRO_OVERSHOOT_ANGLE_MAX);
+        update_ef_yaw_angle_and_error(_rate_ef_desired.z, angle_ef_error, AC_ATTITUDE_RATE_STAB_ACRO_OVERSHOOT_ANGLE_MAX);
+
+        // convert earth-frame angle errors to body-frame angle errors
+        frame_conversion_ef_to_bf(angle_ef_error, _angle_bf_error);
+    } else {
+        _acro_angle_switch = 4500;
+        integrate_bf_rate_error_to_angle_errors();
+        if (frame_conversion_bf_to_ef(_angle_bf_error, angle_ef_error)) {
+            _angle_ef_target.x = wrap_180_cd_float(angle_ef_error.x + _ahrs.roll_sensor);
+            _angle_ef_target.y = wrap_180_cd_float(angle_ef_error.y + _ahrs.pitch_sensor);
+            _angle_ef_target.z = wrap_360_cd_float(angle_ef_error.z + _ahrs.yaw_sensor);
+        }
+        if (_angle_ef_target.y > 9000.0f) {
+            _angle_ef_target.x = wrap_180_cd_float(_angle_ef_target.x + 18000.0f);
+            _angle_ef_target.y = wrap_180_cd_float(18000.0f - _angle_ef_target.y);
+            _angle_ef_target.z = wrap_360_cd_float(_angle_ef_target.z + 18000.0f);
+        }
+        if (_angle_ef_target.y < -9000.0f) {
+            _angle_ef_target.x = wrap_180_cd_float(_angle_ef_target.x + 18000.0f);
+            _angle_ef_target.y = wrap_180_cd_float(-18000.0f - _angle_ef_target.y);
+            _angle_ef_target.z = wrap_360_cd_float(_angle_ef_target.z + 18000.0f);
+        }
+    }
+
+    // convert body-frame angle errors to body-frame rate targets
+    update_rate_bf_targets();
+
     // body-frame rate commands added
     _rate_bf_target += _rate_bf_desired;
 }
@@ -423,50 +408,14 @@ void AC_AttitudeControl::rate_bf_roll_pitch_yaw(float roll_rate_bf, float pitch_
 // rate_controller_run - run lowest level body-frame rate controller and send outputs to the motors
 //      should be called at 100hz or more
 //
-// CHM - called directly in fast_loop
 void AC_AttitudeControl::rate_controller_run()
 {
     // call rate controllers and send output to motors object
     // To-Do: should the outputs from get_rate_roll, pitch, yaw be int16_t which is the input to the motors library?
     // To-Do: skip this step if the throttle out is zero?
-	// CHM - this is the place where rate PID is being applied
-	_motors.set_roll(rate_bf_to_motor_roll(_rate_bf_target.x));
-#ifndef USE_MY_FRAME
-	
-	_motors.set_pitch(rate_bf_to_motor_pitch(_rate_bf_target.y));
-	_motors.set_yaw(rate_bf_to_motor_yaw(_rate_bf_target.z));
-#else
-	// CHM - adding code for decoupling of yaw and
-	float last_yaw = _motors.get_yaw();	// range -4500 ~ 4500
-	float curr_yaw = rate_bf_to_motor_yaw(_rate_bf_target.z); // range -4500 ~ 4500
-	
-	if (_dt != 0 && _yaw_pitch_decouple_k > 0.0)
-	{
-		pitch_decouple_factor = pitch_decouple_factor + 0.24*((curr_yaw - last_yaw) / _dt * _yaw_pitch_decouple_k - pitch_decouple_factor);
-		pitch_decouple_factor = abs(pitch_decouple_factor);
-	}
-		
-	else
-		pitch_decouple_factor =  0;
-
-	// chm - datalog of pitch decouple facotr value
-	Log_Write_Data(DATA_PITCH_DECOUPLE_FACTOR, pitch_decouple_factor);
-
-	_motors.set_yaw(curr_yaw);
-	_motors.set_pitch(
-		constrain_float
-			(
-			rate_bf_to_motor_pitch(_rate_bf_target.y) + pitch_decouple_factor,
-			-AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX,
-			AC_ATTITUDE_RATE_RP_CONTROLLER_OUT_MAX
-			)
-		);
-	
-
-#endif // USE_MY_FRAME
-
-	
-    
+    _motors.set_roll(rate_bf_to_motor_roll(_rate_bf_target.x));
+    _motors.set_pitch(rate_bf_to_motor_pitch(_rate_bf_target.y));
+    _motors.set_yaw(rate_bf_to_motor_yaw(_rate_bf_target.z));
 }
 
 //
@@ -482,12 +431,17 @@ void AC_AttitudeControl::frame_conversion_ef_to_bf(const Vector3f& ef_vector, Ve
 }
 
 // frame_conversion_bf_to_ef - converts body frame vector to earth frame vector
-void AC_AttitudeControl::frame_conversion_bf_to_ef(const Vector3f& bf_vector, Vector3f& ef_vector)
+bool AC_AttitudeControl::frame_conversion_bf_to_ef(const Vector3f& bf_vector, Vector3f& ef_vector)
 {
-    // convert earth frame rates to body frame rates
+    // avoid divide by zero
+    if (_ahrs.cos_pitch() == 0.0f) {
+        return false;
+    }
+    // convert earth frame angle or rates to body frame
     ef_vector.x = bf_vector.x + _ahrs.sin_roll() * (_ahrs.sin_pitch()/_ahrs.cos_pitch()) * bf_vector.y + _ahrs.cos_roll() * (_ahrs.sin_pitch()/_ahrs.cos_pitch()) * bf_vector.z;
     ef_vector.y = _ahrs.cos_roll()  * bf_vector.y - _ahrs.sin_roll() * bf_vector.z;
     ef_vector.z = (_ahrs.sin_roll() / _ahrs.cos_pitch()) * bf_vector.y + (_ahrs.cos_roll() / _ahrs.cos_pitch()) * bf_vector.z;
+    return true;
 }
 
 //
@@ -575,11 +529,9 @@ void AC_AttitudeControl::integrate_bf_rate_error_to_angle_errors()
 void AC_AttitudeControl::update_rate_bf_targets()
 {
     // stab roll calculation
-	// CHM - this is the parameter Stabilize Roll
     _rate_bf_target.x = _p_angle_roll.kP() * _angle_bf_error.x;
     // constrain roll rate request
     if (_flags.limit_angle_to_rate_request) {
-		// CHM - _angle_rate_rp_max == ATC_RATE_RP_MAX
         _rate_bf_target.x = constrain_float(_rate_bf_target.x,-_angle_rate_rp_max,_angle_rate_rp_max);
     }
 
@@ -597,9 +549,8 @@ void AC_AttitudeControl::update_rate_bf_targets()
         _rate_bf_target.z = constrain_float(_rate_bf_target.z,-_angle_rate_y_max,_angle_rate_y_max);
     }
 
-	// CHM - ???? why
-	_rate_bf_target.x += -_angle_bf_error.y * _ahrs.get_gyro().z;
-	_rate_bf_target.y +=  _angle_bf_error.x * _ahrs.get_gyro().z;
+	_rate_bf_target.x += _angle_bf_error.y * _ahrs.get_gyro().z;
+	_rate_bf_target.y += -_angle_bf_error.x * _ahrs.get_gyro().z;
 }
 
 //
@@ -618,7 +569,6 @@ float AC_AttitudeControl::rate_bf_to_motor_roll(float rate_target_cds)
     current_rate = (_ahrs.get_gyro().x * AC_ATTITUDE_CONTROL_DEGX100);
 
     // calculate error and call pid controller
-	// CHM - input of rate controller is the rate difference in **cm/s**
     rate_error = rate_target_cds - current_rate;
     p = _pid_rate_roll.get_p(rate_error);
 
@@ -722,7 +672,6 @@ void AC_AttitudeControl::accel_limiting(bool enable_limits)
         _accel_rp_max = 0.0f;
         _accel_y_max = 0.0f;
     }
-    hal.console->printf_P(PSTR("AccLim:%d"),(int)enable_limits);
 }
 
 //

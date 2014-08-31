@@ -296,6 +296,15 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @Increment: 1
     GSCALAR(throttle_mid,        "THR_MID",    THR_MID_DEFAULT),
 
+    // @Param: THR_DZ
+    // @DisplayName: Throttle deadzone
+    // @Description: The deadzone above and below mid throttle.  Used in AltHold, Loiter, PosHold flight modes
+    // @User: Standard
+    // @Range: 0 300
+    // @Units: pwm
+    // @Increment: 1
+    GSCALAR(throttle_deadzone,  "THR_DZ",    THR_DZ_DEFAULT),
+
     // @Param: FLTMODE1
     // @DisplayName: Flight Mode 1
     // @Description: Flight mode when Channel 5 pwm is <= 1230
@@ -362,7 +371,7 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @DisplayName: Channel 6 Tuning
     // @Description: Controls which parameters (normally PID gains) are being tuned with transmitter's channel 6 knob
     // @User: Standard
-    // @Values: 0:None,1:Stab Roll/Pitch kP,4:Rate Roll/Pitch kP,5:Rate Roll/Pitch kI,21:Rate Roll/Pitch kD,3:Stab Yaw kP,6:Rate Yaw kP,26:Rate Yaw kD,14:Altitude Hold kP,7:Throttle Rate kP,34:Throttle Accel kP,35:Throttle Accel kI,36:Throttle Accel kD,42:Loiter Speed,12:Loiter Pos kP,22:Loiter Rate kP,28:Loiter Rate kI,23:Loiter Rate kD,10:WP Speed,25:Acro RollPitch kP,40:Acro Yaw kP,9:Relay On/Off,13:Heli Ext Gyro,17:OF Loiter kP,18:OF Loiter kI,19:OF Loiter kD,30:AHRS Yaw kP,31:AHRS kP,38:Declination,39:Circle Rate,41:RangeFinder Gain,46:Rate Pitch kP,47:Rate Pitch kI,48:Rate Pitch kD,49:Rate Roll kP,50:Rate Roll kI,51:Rate Roll kD,52:Rate Pitch FF,53:Rate Roll FF,54:Rate Yaw FF
+    // @Values: 0:None,1:Stab Roll/Pitch kP,4:Rate Roll/Pitch kP,5:Rate Roll/Pitch kI,21:Rate Roll/Pitch kD,3:Stab Yaw kP,6:Rate Yaw kP,26:Rate Yaw kD,14:Altitude Hold kP,7:Throttle Rate kP,34:Throttle Accel kP,35:Throttle Accel kI,36:Throttle Accel kD,42:Loiter Speed,12:Loiter Pos kP,22:Loiter Rate kP,28:Loiter Rate kI,23:Loiter Rate kD,10:WP Speed,25:Acro RollPitch kP,40:Acro Yaw kP,13:Heli Ext Gyro,17:OF Loiter kP,18:OF Loiter kI,19:OF Loiter kD,30:AHRS Yaw kP,31:AHRS kP,38:Declination,39:Circle Rate,41:RangeFinder Gain,46:Rate Pitch kP,47:Rate Pitch kI,48:Rate Pitch kD,49:Rate Roll kP,50:Rate Roll kI,51:Rate Roll kD,52:Rate Pitch FF,53:Rate Roll FF,54:Rate Yaw FF
     GSCALAR(radio_tuning, "TUNE",                   0),
 
     // @Param: TUNE_LOW
@@ -382,21 +391,21 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @Param: FRAME
     // @DisplayName: Frame Orientation (+, X or V)
     // @Description: Controls motor mixing for multicopters.  Not used for Tri or Traditional Helicopters.
-    // @Values: 0:Plus, 1:X, 2:V, 3:H, 4:V-Tail, 10:Y6B (New)
+    // @Values: 0:Plus, 1:X, 2:V, 3:H, 4:V-Tail, 5:A-Tail, 10:Y6B (New)
     // @User: Standard
     GSCALAR(frame_orientation, "FRAME",             AP_MOTORS_X_FRAME),
 
     // @Param: CH7_OPT
     // @DisplayName: Channel 7 option
     // @Description: Select which function if performed when CH7 is above 1800 pwm
-    // @Values: 0:Do Nothing, 2:Flip, 3:Simple Mode, 4:RTL, 5:Save Trim, 7:Save WP, 8:Multi Mode, 9:Camera Trigger, 10:RangeFinder, 11:Fence, 12:ResetToArmedYaw, 13:Super Simple Mode, 14:Acro Trainer, 16:Auto, 17:AutoTune, 18:Land, 19:EPM, 20:EKF, 21:Parachute Enable, 22:Parachute Release, 23:Parachute 3pos, 24:Auto Mission Reset, 25:AttCon Feed Forward, 26:AttCon Accel Limits, 27:Retract Mount
+    // @Values: 0:Do Nothing, 2:Flip, 3:Simple Mode, 4:RTL, 5:Save Trim, 7:Save WP, 8:Multi Mode, 9:Camera Trigger, 10:RangeFinder, 11:Fence, 12:ResetToArmedYaw, 13:Super Simple Mode, 14:Acro Trainer, 16:Auto, 17:AutoTune, 18:Land, 19:EPM, 20:EKF, 21:Parachute Enable, 22:Parachute Release, 23:Parachute 3pos, 24:Auto Mission Reset, 25:AttCon Feed Forward, 26:AttCon Accel Limits, 27:Retract Mount, 28:Relay On/Off
     // @User: Standard
     GSCALAR(ch7_option, "CH7_OPT",                  CH7_OPTION),
 
     // @Param: CH8_OPT
     // @DisplayName: Channel 8 option
     // @Description: Select which function if performed when CH8 is above 1800 pwm
-    // @Values: 0:Do Nothing, 2:Flip, 3:Simple Mode, 4:RTL, 5:Save Trim, 7:Save WP, 8:Multi Mode, 9:Camera Trigger, 10:RangeFinder, 11:Fence, 12:ResetToArmedYaw, 13:Super Simple Mode, 14:Acro Trainer, 16:Auto, 17:AutoTune, 18:Land, 19:EPM, 20:EKF, 21:Parachute Enable, 22:Parachute Release, 23:Parachute 3pos, 24:Auto Mission Reset, 25:AttCon Feed Forward, 26:AttCon Accel Limits, 27:Retract Mount
+    // @Values: 0:Do Nothing, 2:Flip, 3:Simple Mode, 4:RTL, 5:Save Trim, 7:Save WP, 8:Multi Mode, 9:Camera Trigger, 10:RangeFinder, 11:Fence, 12:ResetToArmedYaw, 13:Super Simple Mode, 14:Acro Trainer, 16:Auto, 17:AutoTune, 18:Land, 19:EPM, 20:EKF, 21:Parachute Enable, 22:Parachute Release, 23:Parachute 3pos, 24:Auto Mission Reset, 25:AttCon Feed Forward, 26:AttCon Accel Limits, 27:Retract Mount, 28:Relay On/Off
     // @User: Standard
     GSCALAR(ch8_option, "CH8_OPT",                  CH8_OPTION),
 
@@ -447,12 +456,12 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @User: Advanced
     GSCALAR(land_repositioning, "LAND_REPOSITION",     LAND_REPOSITION_DEFAULT),
 
-    // @Param: EKFCHECK_THRESH
-    // @DisplayName: EKF checker compass and velocity variance threshold
+    // @Param: EKF_CHECK_THRESH
+    // @DisplayName: EKF and InertialNav check compass and velocity variance threshold
     // @Description: Allows setting the maximum acceptable compass and velocity variance (0 to disable check)
     // @Values: 0:Disabled, 0.6:Default, 1.0:Relaxed
     // @User: Advanced
-    GSCALAR(ekfcheck_thresh, "EKFCHECK_THRESH", EKFCHECK_THRESHOLD_DEFAULT),
+    GSCALAR(ekfcheck_thresh, "EKF_CHECK_THRESH",    EKFCHECK_THRESHOLD_DEFAULT),
 
 #if FRAME_CONFIG ==     HELI_FRAME
     // @Group: HS1_
@@ -587,6 +596,13 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @User: Advanced
     GSCALAR(acro_trainer,   "ACRO_TRAINER",     ACRO_TRAINER_LIMITED),
 
+    // @Param: ACRO_EXPO
+    // @DisplayName: Acro Expo
+    // @Description: Acro roll/pitch Expo to allow faster rotation when stick at edges
+    // @Values: 0:Disabled,0.1:Very Low,0.2:Low,0.3:Medium,0.4:High,0.5:Very High
+    // @User: Advanced
+    GSCALAR(acro_expo,  "ACRO_EXPO",    ACRO_EXPO_DEFAULT),
+
     // PID controller
     //---------------
 
@@ -607,7 +623,7 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @Param: RATE_RLL_IMAX
     // @DisplayName: Roll axis rate controller I gain maximum
     // @Description: Roll axis rate controller I gain maximum.  Constrains the maximum motor output that the I gain will output
-    // @Range: 0 500
+    // @Range: 0 4500
     // @Increment: 10
     // @Units: Percent*10
     // @User: Standard
@@ -641,7 +657,7 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @Param: RATE_PIT_IMAX
     // @DisplayName: Pitch axis rate controller I gain maximum
     // @Description: Pitch axis rate controller I gain maximum.  Constrains the maximum motor output that the I gain will output
-    // @Range: 0 500
+    // @Range: 0 4500
     // @Increment: 10
     // @Units: Percent*10
     // @User: Standard
@@ -675,7 +691,7 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @Param: RATE_YAW_IMAX
     // @DisplayName: Yaw axis rate controller I gain maximum
     // @Description: Yaw axis rate controller I gain maximum.  Constrains the maximum motor output that the I gain will output
-    // @Range: 0 800
+    // @Range: 0 4500
     // @Increment: 10
     // @Units: Percent*10
     // @User: Standard
@@ -856,25 +872,12 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @User: Standard
     GGROUP(pid_optflow_pitch, "OF_PIT_",   AC_PID),
 
-    // PI controller
+    // P controllers
     //--------------
     // @Param: STB_RLL_P
     // @DisplayName: Roll axis stabilize controller P gain
     // @Description: Roll axis stabilize (i.e. angle) controller P gain.  Converts the error between the desired roll angle and actual angle to a desired roll rate
     // @Range: 3.000 12.000
-    // @User: Standard
-
-    // @Param: STB_RLL_I
-    // @DisplayName: Roll axis stabilize controller I gain
-    // @Description: Roll axis stabilize (i.e. angle) controller I gain.  Corrects for longer-term difference in desired roll angle and actual angle
-    // @Range: 0.000 0.100
-    // @User: Standard
-
-    // @Param: STB_RLL_IMAX
-    // @DisplayName: Roll axis stabilize controller I gain maximum
-    // @Description: Roll axis stabilize (i.e. angle) controller I gain maximum.  Constrains the maximum roll rate that the I term will generate
-    // @Range: 0 4500
-    // @Units: Centi-Degrees/Sec
     // @User: Standard
     GGROUP(p_stabilize_roll,       "STB_RLL_", AC_P),
 
@@ -1000,7 +1003,7 @@ const AP_Param::Info var_info[] PROGMEM = {
 
     // @Group: BRD_
     // @Path: ../libraries/AP_BoardConfig/AP_BoardConfig.cpp
-    GOBJECT(BoardConfig,            "BRD_",       AP_BoardConfig),    
+    GOBJECT(BoardConfig,            "BRD_",       AP_BoardConfig),
 
 #if SPRAYER == ENABLED
     // @Group: SPRAY_
@@ -1138,7 +1141,7 @@ const AP_Param::ConversionInfo conversion_table[] PROGMEM = {
 static void load_parameters(void)
 {
     if (!AP_Param::check_var_info()) {
-        cliSerial->printf_P(PSTR("Bad var table\n"));        
+        cliSerial->printf_P(PSTR("Bad var table\n"));
         hal.scheduler->panic(PSTR("Bad var table"));
     }
 
