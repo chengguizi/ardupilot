@@ -161,7 +161,7 @@ void GPS_Glitch::check_position()
 	//CHM - check for altitude change
 	if (all_ok && _gps.have_vertical_velocity())
 	{
-		distance_cm = abs(gps_pos.alt - curr_pos.alt);
+		distance_cm = gps_pos.alt - curr_pos.alt;
 
 		/*//////////////////////////
 		//////DEBUG Message////////
@@ -169,12 +169,24 @@ void GPS_Glitch::check_position()
 		mydebug.valuef = gps_pos.alt - curr_pos.alt;
 		debug_send_message(MSG_NAMED_VALUE_FLOAT);
 		//////////////////////////*/
-		Log_Write_Data(DATA_GPS_ALTITUDE_DIFFERENCE, gps_pos.alt - curr_pos.alt);
+		if (distance_cm > 20.0f || distance_cm < -100.0f)
+			Log_Write_Data(DATA_GPS_ALTITUDE_DIFFERENCE, (float)(gps_pos.alt - curr_pos.alt));
 
-		if (distance_cm > _radius_cm) {
+		if ( (float)fabs(distance_cm) > _radius_cm ) {
 			// or if within the maximum distance we could have moved based on our acceleration
-			accel_based_distance = 0.5f * _accel_max_cmss * sane_dt * sane_dt;
-			all_ok = (distance_cm <= accel_based_distance);
+			if (distance_cm > 0.0f)
+			{
+				accel_based_distance = 0.5f * _accel_max_cmss * sane_dt * sane_dt;
+				all_ok = distance_cm <= accel_based_distance;
+			}
+			else
+			{
+				accel_based_distance = -0.5f * 980 * sane_dt * sane_dt;
+				all_ok = distance_cm >= accel_based_distance;
+			}
+			
+
+			
 			/*//////////////////////////
 			//////DEBUG Message////////
 			strcpy(mydebug.name, "Gl_alt_R");
