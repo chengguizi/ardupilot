@@ -143,7 +143,7 @@ void AC_Circle::update()
 
 			Vector3f pos_diff = target - curr_pos;
 			// CHM - all in cm
-			if (pos_diff.length() / _radius > 0.15f)
+			if (pos_diff.length() / _radius > 0.2f)
 			{
 				_angle -= angle_change;
 				_angle = wrap_PI(_angle);
