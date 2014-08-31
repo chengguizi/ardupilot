@@ -34,6 +34,7 @@ static bool start_command(const AP_Mission::Mission_Command& cmd)
 {
     // To-Do: logging when new commands start/end
     if (g.log_bitmask & MASK_LOG_CMD) {
+		// CHM - the place where cmd is being logged
         Log_Write_Cmd(cmd);
     }
 
@@ -354,9 +355,11 @@ static void do_land(const AP_Mission::Mission_Command& cmd)
 
         // calculate and set desired location above landing target
         Vector3f pos = pv_location_to_vector(cmd.content.location);
+		// CHM - before actual land, the altitude is kept
         pos.z = current_loc.alt;
         auto_wp_start(pos);
     }else{
+		// CHM - if position is not specified, directly decend
         // set landing state
         land_state = LAND_STATE_DESCENDING;
 
@@ -421,6 +424,7 @@ static void do_circle(const AP_Mission::Mission_Command& cmd)
 
     // set circle radius
     if (circle_radius_m != 0) {
+		// CHM - this overide the parameter CIRCLE_RADIUS, in cm
         circle_nav.set_radius((float)circle_radius_m * 100.0f);
     }
 
@@ -501,6 +505,7 @@ static void do_spline_wp(const AP_Mission::Mission_Command& cmd)
             seg_end_type = AC_WPNav::SEGMENT_END_SPLINE;
             next_destination = pv_location_to_vector(temp_cmd.content.location);
         }
+		// CHM - if next waypoint is loiter turns, seg_end_type = AC_WPNav::SEGMENT_END_STOP
     }
 
     // set spline navigation target
@@ -664,6 +669,7 @@ static bool verify_circle(const AP_Mission::Mission_Command& cmd)
     }
 
     // check if we have completed circling
+	// CHM - this is the place to check the rounds, can be modified!
     return fabsf(circle_nav.get_angle_total()/(2*M_PI)) >= (float)LOWBYTE(cmd.p1);
 }
 
