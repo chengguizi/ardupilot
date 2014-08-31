@@ -364,6 +364,9 @@ void AC_WPNav::wp_and_spline_init()
 
     // initialise position controller
     _pos_control.init_xy_controller();
+	// CHM - clear desired velocity, so it does not interefer with the auto mode
+	// Need to be verified
+	_pos_control.set_desired_velocity_xy(0.0f, 0.0f);
 
     // initialise position controller speed and acceleration
 	// CHM - WPNAV_SPEED
@@ -444,6 +447,7 @@ void AC_WPNav::set_wp_origin_and_destination(const Vector3f& origin, const Vecto
     _flags.reached_destination = false;
     _flags.fast_waypoint = false;   // default waypoint back to slow // CHM - default fast_waypoint mode
     _flags.slowing_down = false;    // target is not slowing down yet
+	// CHM - defualt segment_type
     _flags.segment_type = SEGMENT_STRAIGHT;
     _flags.new_wp_destination = true;   // flag new waypoint so we can freeze the pos controller's feed forward and smooth the transition
 
@@ -1004,6 +1008,7 @@ void AC_WPNav::calc_slow_down_distance(float speed_cms, float accel_cmss)
 	}
     // To-Do: should we use a combination of horizontal and vertical speeds?
     // To-Do: update this automatically when speed or acceleration is changed
+	// CHM - may be change to 2.0f?
     _slow_down_dist = speed_cms * speed_cms / (4.0f*accel_cmss);
 }
 
