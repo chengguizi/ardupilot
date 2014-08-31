@@ -542,7 +542,8 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
         if(dt > 0 && !reached_leash_limit) {
 			// CHM - WHY there is a coefficient 2.0 ???
 			// CHM - edit: delete 2.0f
-            _limited_speed_xy_cms += _track_accel * dt;
+			// CHM - add fake wind
+			_limited_speed_xy_cms += _track_accel * dt * (1 - 0.99f * _limited_speed_xy_cms / _track_speed);
         }
         // do not allow speed to be below zero or over top speed
 		// CHM - should it be _track_speed * pos_delta_unit_xy ? no
@@ -563,10 +564,9 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
 
         // if our current velocity is within the linear velocity range limit the intermediate point's velocity to be no more than the linear_velocity above or below our current velocity
         // CHM - this make sure the difference of _limited_speed_xy_cms and actual speed difference is within response range?
-		// CHM - deleting this will make UAV accelerate faster
-		/*if (fabsf(speed_along_track) < linear_velocity) {
+		if (fabsf(speed_along_track) < linear_velocity) {
             _limited_speed_xy_cms = constrain_float(_limited_speed_xy_cms,speed_along_track-linear_velocity,speed_along_track+linear_velocity);
-        }*/
+        }
     }
     // advance the current target
     if (!reached_leash_limit) {
