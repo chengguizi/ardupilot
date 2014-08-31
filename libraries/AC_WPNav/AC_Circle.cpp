@@ -110,13 +110,17 @@ void AC_Circle::update()
 
         // ramp up angular velocity to maximum
         if (_rate >= 0) {
+			// CHM - _angular_vel_max is actually limited _rate
             if (_angular_vel < _angular_vel_max) {
-                _angular_vel += _angular_accel * dt;
+				// CHM - there should be a fake wind introduced in angular velocity
+                //_angular_vel += _angular_accel * dt;
+				_angular_vel += _angular_accel * dt * (1 - 0.99f * _angular_vel / _angular_vel_max);
                 _angular_vel = constrain_float(_angular_vel, 0, _angular_vel_max);
             }
         }else{
             if (_angular_vel > _angular_vel_max) {
-                _angular_vel += _angular_accel * dt;
+                //_angular_vel += _angular_accel * dt;
+				_angular_vel += _angular_accel * dt * (1 - 0.99f * _angular_vel / _angular_vel_max);
                 _angular_vel = constrain_float(_angular_vel, _angular_vel_max, 0);
             }
         }
@@ -139,7 +143,12 @@ void AC_Circle::update()
             _pos_control.set_pos_target(target);
 
             // heading is 180 deg from vehicles target position around circle
-            _yaw = wrap_PI(_angle-PI) * AC_CIRCLE_DEGX100;
+			// CHM - this can be changed to make UAV facing front
+            //_yaw = wrap_PI(_angle-PI) * AC_CIRCLE_DEGX100;
+			if (_rate>= 0.0f) // clockwise
+				_yaw = wrap_PI(_angle + PI/2.0f) * AC_CIRCLE_DEGX100;
+			else
+				_yaw = wrap_PI(_angle - PI / 2.0f) * AC_CIRCLE_DEGX100;
         }else{
             // set target position to center
             Vector3f target;
@@ -209,18 +218,24 @@ void AC_Circle::calc_velocities()
         _angular_accel = _angular_vel_max;  // reach maximum yaw velocity in 1 second
     }else{
         // set starting angle to current heading - 180 degrees
+		// CHM - need to be modified?
+		// Looks like this is overriden by init_start_angle()
         _angle = wrap_PI(_ahrs.yaw-PI);
 
         // calculate max velocity based on waypoint speed ensuring we do not use more than half our max acceleration for accelerating towards the center of the circle
-        float velocity_max = min(_pos_control.get_speed_xy(), safe_sqrt(0.5f*_pos_control.get_accel_xy()*_radius));
+        float velocity_max = min(_pos_control.get_speed_xy(), safe_sqrt(0.707f*_pos_control.get_accel_xy()*_radius));
 
         // angular_velocity in radians per second
         _angular_vel_max = velocity_max/_radius;
+		// CHM - _angular_vel_max is eventually defined as limited _rate
         _angular_vel_max = constrain_float(ToRad(_rate),-_angular_vel_max,_angular_vel_max);
 
         // angular_velocity in radians per second
+		// CHM - This is tangential acceleration
+		// CHM - we should give room for acceleration towards center
         _angular_accel = _pos_control.get_accel_xy()/_radius;
         if (_rate < 0.0f) {
+			// CHM - positive is clockwise, negetive is CCW
             _angular_accel = -_angular_accel;
         }
     }
@@ -235,6 +250,7 @@ void AC_Circle::calc_velocities()
 void AC_Circle::init_start_angle(bool use_heading)
 {
     // initialise angle total
+	// CHM - this can be set, to give a bit overshoot to make sure the circle is completed
     _angle_total = 0;
 
     // if the radius is zero we are doing panorama so init angle to the current heading
@@ -253,6 +269,7 @@ void AC_Circle::init_start_angle(bool use_heading)
             _angle = wrap_PI(_ahrs.yaw-PI);
         } else {
             // get bearing from circle center to vehicle in radians
+			// CHM - starting angle of LOITER_TURNS is defined here
             float bearing_rad = ToRad(90) + fast_atan2(-(curr_pos.x-_center.x), curr_pos.y-_center.y);
             _angle = wrap_PI(bearing_rad);
         }

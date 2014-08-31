@@ -353,6 +353,9 @@ static void auto_circle_movetoedge_start()
     // initialise wpnav to move to edge of circle
     wp_nav.set_wp_destination(circle_edge);
 
+	// CHM - TO MAKE SURE THE UAV DOES NOT STOP BEFORE THE LOITER TURNS
+	wp_nav.set_fast_waypoint(true);
+
     // if we are outside the circle, point at the edge, otherwise hold yaw
     const Vector3f &curr_pos = inertial_nav.get_position();
     const Vector3f &circle_center = circle_nav.get_center();
