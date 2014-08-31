@@ -139,8 +139,24 @@ void AC_Circle::update()
             target.y = _center.y - _radius * sinf(-_angle);
             target.z = _pos_control.get_alt_target();
 
-            // update position controller target
-            _pos_control.set_pos_target(target);
+			const Vector3f &curr_pos =  _inav.get_position();
+
+			Vector3f pos_diff = target - curr_pos;
+			// CHM - all in cm
+			if (pos_diff.length() / _radius > 0.15f)
+			{
+				_angle -= angle_change;
+				_angle = wrap_PI(_angle);
+				_angle_total -= angle_change;
+			}
+			else
+
+			{
+				// update position controller target
+				_pos_control.set_pos_target(target);
+			}
+
+            
 
             // heading is 180 deg from vehicles target position around circle
 			// CHM - this can be changed to make UAV facing front
