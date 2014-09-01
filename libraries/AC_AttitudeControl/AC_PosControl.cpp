@@ -743,8 +743,9 @@ void AC_PosControl::pos_to_rate_xy(bool use_desired_rate, float dt)
         // calculate distance error
 		// CHM - _pos_target is acquired during case 0
 		// CHM - to indirectly decrease the _leash, increase _pos_error by some multiple.
-        _pos_error.x = (_pos_target.x - curr_pos.x) *2.0f;
-        _pos_error.y = (_pos_target.y - curr_pos.y) *2.0f;
+		// CHM - assume by the distance of leash, the speed reduce by half, from max. speed, using max. deceleration
+        _pos_error.x = (_pos_target.x - curr_pos.x) *1.2f;
+        _pos_error.y = (_pos_target.y - curr_pos.y) *1.2f;
 
 		// CHM - IMPORTANT, there is no safeguard to protect against sudden change in _pos_error
 		// this may cause excessive acceleration (rate of change of velocity) being commanded
