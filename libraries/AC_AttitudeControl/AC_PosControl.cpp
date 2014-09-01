@@ -911,7 +911,7 @@ void AC_PosControl::accel_to_lean_angles()
 	// CHM - this assumes that the UAV is at hover.
 	// However, when the UAV is accelerating vertically, the horizontal acceleration at given angle changes.
 	// ADD:
-	static float thrust_accel = GRAVITY_MSS * 100.0f;
+	/*static float thrust_accel = GRAVITY_MSS * 100.0f;
 	// vertical thrust acceleration
 	thrust_accel += 0.2f * ( -(_ahrs.get_accel_ef().z) * 100.0f - thrust_accel); // 2 Hz filter
 	// compensate the vertical acceleration
@@ -921,7 +921,9 @@ void AC_PosControl::accel_to_lean_angles()
 		accel_forward = accel_forward * (float)fabs(thrust_accel / accel_forward);
 
 	_roll_target = constrain_float(fast_atan(accel_right / thrust_accel)*(18000 / M_PI), -lean_angle_max, lean_angle_max);
-	_pitch_target = constrain_float(fast_atan(-accel_forward / thrust_accel)*(18000 / M_PI), -lean_angle_max, lean_angle_max);
+	_pitch_target = constrain_float(fast_atan(-accel_forward / thrust_accel)*(18000 / M_PI), -lean_angle_max, lean_angle_max);*/
+	_roll_target = constrain_float(fast_atan(accel_right / (GRAVITY_MSS * 100))*(18000 / M_PI), -lean_angle_max, lean_angle_max);
+	_pitch_target = constrain_float(fast_atan(-accel_forward / (GRAVITY_MSS * 100))*(18000 / M_PI), -lean_angle_max, lean_angle_max);
 }
 
 // get_lean_angles_to_accel - convert roll, pitch lean angles to lat/lon frame accelerations in cm/s/s
