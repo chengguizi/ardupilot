@@ -168,8 +168,8 @@ void AC_Circle::update()
 						inter_unit_vector.x = cosf(wrap_PI(uav_angle - PI / 2.0f - 0.2f));
 						inter_unit_vector.y = sinf(wrap_PI(uav_angle - PI / 2.0f - 0.2f));
 					}
-					target.x = _center.x +inter_unit_vector.x * pos_diff.length();
-					target.y = _center.y + inter_unit_vector.y * pos_diff.length();
+					target.x = curr_pos.x +inter_unit_vector.x * pos_diff.length();
+					target.y = curr_pos.x + inter_unit_vector.y * pos_diff.length();
 					// _radius confirm != 0
 					_pos_control.set_pos_target(target);
 				}
