@@ -142,13 +142,12 @@ void AC_Circle::update()
 			const Vector3f &curr_pos =  _inav.get_position();
 
 			Vector3f pos_diff = target - curr_pos;
-			float bearing_rad = fast_atan2((curr_pos.x-_center.x), curr_pos.y-_center.y);
+			float bearing_rad = ToRad(90) + fast_atan2(-(curr_pos.x - _center.x), curr_pos.y - _center.y);
 			float uav_angle = wrap_PI(bearing_rad);
 			// CHM - all in cm
-			if (fabs(_angle - uav_angle) > 0.2f) // 11.48 degree difference // rotating clockwise
+			if (fabs(wrap_PI(_angle - uav_angle)) > 0.2f) // 11.48 degree difference // rotating clockwise
 			{
-				float leash_xy = _pos_control.get_leash_xy();
-				if (pos_diff.length() >= leash_xy)
+				if (pos_diff.length() >= _pos_control.get_leash_xy())
 				{
 					_angle -= angle_change;
 					_angle = wrap_PI(_angle);
@@ -159,15 +158,15 @@ void AC_Circle::update()
 					// pos diff hasn't reach max, find intermediate angle for target
 					Vector3f inter_unit_vector ;
 					inter_unit_vector.z=0.0f;
-					if (_rate >= 0) // clockwise
+					if ( wrap_PI(_angle - uav_angle) >= 0.0f) // clockwise
 					{
-						inter_unit_vector.x = cosf( wrap_PI( uav_angle - PI / 2.0f - 0.2f));
-						inter_unit_vector.y = sinf(	wrap_PI(uav_angle - PI / 2.0f - 0.2f));
+						inter_unit_vector.x = cosf( wrap_PI( uav_angle + PI / 2.0f + 0.2f));
+						inter_unit_vector.y = sinf(	wrap_PI(uav_angle + PI / 2.0f + 0.2f));
 					}
 					else
 					{
-						inter_unit_vector.x = cosf(wrap_PI(uav_angle + PI / 2.0f + 0.2f));
-						inter_unit_vector.y = sinf(wrap_PI(uav_angle + PI / 2.0f + 0.2f));
+						inter_unit_vector.x = cosf(wrap_PI(uav_angle - PI / 2.0f - 0.2f));
+						inter_unit_vector.y = sinf(wrap_PI(uav_angle - PI / 2.0f - 0.2f));
 					}
 					target.x = _center.x +inter_unit_vector.x * pos_diff.length();
 					target.y = _center.y + inter_unit_vector.y * pos_diff.length();
@@ -312,7 +311,7 @@ void AC_Circle::init_start_angle(bool use_heading)
         } else {
             // get bearing from circle center to vehicle in radians
 			// CHM - starting angle of LOITER_TURNS is defined here
-            float bearing_rad = fast_atan2((curr_pos.x-_center.x), curr_pos.y-_center.y);
+			float bearing_rad = ToRad(90) + fast_atan2(-(curr_pos.x - _center.x), curr_pos.y - _center.y);
             _angle = wrap_PI(bearing_rad);
 			hal.uartC->printf_P(PSTR("circle start bearing: %f dgree\n"), _angle/PI*180.0f);
 			hal.console->printf_P(PSTR("circle start bearing: %f dgree\n"), _angle / PI*180.0f);
