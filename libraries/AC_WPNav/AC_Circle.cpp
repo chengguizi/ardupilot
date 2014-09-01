@@ -267,10 +267,10 @@ void AC_Circle::init_start_angle(bool use_heading)
 {
     // initialise angle total
 	// CHM - this can be set, to give a bit overshoot to make sure the circle is completed
-    _angle_total = 0;
+    _angle_total = 0.0f;
 
     // if the radius is zero we are doing panorama so init angle to the current heading
-    if (_radius <= 0) {
+    if (_radius <= 0.0f) {
         _angle = _ahrs.yaw;
         return;
     }
@@ -289,5 +289,23 @@ void AC_Circle::init_start_angle(bool use_heading)
             float bearing_rad = ToRad(90) + fast_atan2(-(curr_pos.x-_center.x), curr_pos.y-_center.y);
             _angle = wrap_PI(bearing_rad);
         }
+
+		// _radius confirm > 0
+		const Vector3f &curr_vel = _inav.get_velocity();
+		Vector3f tan_unit_vector;
+		tan_unit_vector.z = 0.0f;
+		if (_rate >= 0.0f) //clockwise
+		{
+			tan_unit_vector.x = cosf(wrap_PI(_angle + ToRad(90)));
+			tan_unit_vector.y = sinf(wrap_PI(_angle + ToRad(90)));
+		}
+		else
+		{
+			tan_unit_vector.x = cosf(wrap_PI(_angle - ToRad(90)));
+			tan_unit_vector.y = sinf(wrap_PI(_angle - ToRad(90)));
+		}
+		float angular_tan_vel = (curr_vel * tan_unit_vector) / _radius;
+		hal.uartC->printf_P(PSTR("circle starting angluar velocity: %f rad/s"),angular_tan_vel);
+		_angular_vel = angular_tan_vel;
     }
 }
