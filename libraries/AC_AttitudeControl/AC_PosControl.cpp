@@ -911,14 +911,14 @@ void AC_PosControl::accel_to_lean_angles()
 	// CHM - this assumes that the UAV is at hover.
 	// However, when the UAV is accelerating vertically, the horizontal acceleration at given angle changes.
 	// ADD:
-	
+	static float thrust_accel = GRAVITY_MSS * 100.0f;
 	// vertical thrust acceleration
-	float thrust_accel = -(_ahrs.get_accel_ef().z) * 100.0f;
+	thrust_accel += 0.2f * ( -(_ahrs.get_accel_ef().z) * 100.0f - thrust_accel); // 2 Hz filter
 	// compensate the vertical acceleration
 	if ((float)fabs(accel_right) > thrust_accel)
-		thrust_accel = (float)fabs(accel_right);
+		accel_right = accel_right * (float)fabs( thrust_accel / accel_right);
 	if ((float)fabs(accel_forward) > thrust_accel)
-		thrust_accel = (float)fabs(accel_forward);
+		accel_forward = accel_forward * (float)fabs(thrust_accel / accel_forward);
 
 	_roll_target = constrain_float(fast_atan(accel_right / thrust_accel)*(18000 / M_PI), -lean_angle_max, lean_angle_max);
 	_pitch_target = constrain_float(fast_atan(-accel_forward / thrust_accel)*(18000 / M_PI), -lean_angle_max, lean_angle_max);
