@@ -142,15 +142,41 @@ void AC_Circle::update()
 			const Vector3f &curr_pos =  _inav.get_position();
 
 			Vector3f pos_diff = target - curr_pos;
+			float bearing_rad = fast_atan2((curr_pos.x-_center.x), curr_pos.y-_center.y);
+			float uav_angle = wrap_PI(bearing_rad);
 			// CHM - all in cm
-			if (pos_diff.length() / _radius > 0.2f)
+			if (fabs(_angle - uav_angle) > 0.2f) // 11.48 degree difference // rotating clockwise
 			{
-				_angle -= angle_change;
-				_angle = wrap_PI(_angle);
-				_angle_total -= angle_change;
+				float leash_xy = _pos_control.get_leash_xy();
+				if (pos_diff.length() >= leash_xy)
+				{
+					_angle -= angle_change;
+					_angle = wrap_PI(_angle);
+					_angle_total -= angle_change;
+				}
+				else
+				{
+					// pos diff hasn't reach max, find intermediate angle for target
+					Vector3f inter_unit_vector ;
+					inter_unit_vector.z=0.0f;
+					if (_rate >= 0) // clockwise
+					{
+						inter_unit_vector.x = cosf( wrap_PI( uav_angle - PI / 2.0f - 0.2f));
+						inter_unit_vector.y = sinf(	wrap_PI(uav_angle - PI / 2.0f - 0.2f));
+					}
+					else
+					{
+						inter_unit_vector.x = cosf(wrap_PI(uav_angle + PI / 2.0f + 0.2f));
+						inter_unit_vector.y = sinf(wrap_PI(uav_angle + PI / 2.0f + 0.2f));
+					}
+					target.x = _center.x +inter_unit_vector.x * pos_diff.length();
+					target.y = _center.y + inter_unit_vector.y * pos_diff.length();
+					// _radius confirm != 0
+					_pos_control.set_pos_target(target);
+				}
+				
 			}
 			else
-
 			{
 				// update position controller target
 				_pos_control.set_pos_target(target);
@@ -286,8 +312,10 @@ void AC_Circle::init_start_angle(bool use_heading)
         } else {
             // get bearing from circle center to vehicle in radians
 			// CHM - starting angle of LOITER_TURNS is defined here
-            float bearing_rad = ToRad(90) + fast_atan2(-(curr_pos.x-_center.x), curr_pos.y-_center.y);
+            float bearing_rad = fast_atan2((curr_pos.x-_center.x), curr_pos.y-_center.y);
             _angle = wrap_PI(bearing_rad);
+			hal.uartC->printf_P(PSTR("circle start bearing: %f dgree\n"), _angle/PI*180.0f);
+			hal.console->printf_P(PSTR("circle start bearing: %f dgree\n"), _angle / PI*180.0f);
         }
 
 		// _radius confirm > 0
@@ -305,7 +333,7 @@ void AC_Circle::init_start_angle(bool use_heading)
 			tan_unit_vector.y = sinf(wrap_PI(_angle - ToRad(90)));
 		}
 		float angular_tan_vel = (curr_vel * tan_unit_vector) / _radius;
-		hal.uartC->printf_P(PSTR("circle starting angluar velocity: %f rad/s"),angular_tan_vel);
+		hal.uartC->printf_P(PSTR("circle starting angluar velocity: %f rad/s\n"),angular_tan_vel);
 		_angular_vel = angular_tan_vel;
     }
 }
