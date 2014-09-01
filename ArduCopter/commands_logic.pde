@@ -407,7 +407,9 @@ static void do_circle(const AP_Mission::Mission_Command& cmd)
     if (cmd.content.location.alt == 0) {
         circle_center.z = curr_pos.z;
     } else {
-        move_to_edge_required = true;
+		// CHM - in cm
+		if (fabs(curr_pos.z - circle_center.z) > 200.0f)
+			move_to_edge_required = true;
     }
 
     // set lat/lon position if not provided
@@ -416,7 +418,9 @@ static void do_circle(const AP_Mission::Mission_Command& cmd)
         circle_center.x = curr_pos.x;
         circle_center.y = curr_pos.y;
     } else {
-        move_to_edge_required = true;
+		Vector3f pos_diff = circle_center - curr_pos;
+		if ( pos_diff.length() > 282.0f )
+			move_to_edge_required = true;
     }
 
     // set circle controller's center
