@@ -577,7 +577,8 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
         if (_track_desired > track_desired_max) {
         	_track_desired = track_desired_max;
 			// CHM - edit: delete 2.0f
-        	_limited_speed_xy_cms -= _track_accel * dt;
+        	//_limited_speed_xy_cms -= _track_accel * dt;
+			_limited_speed_xy_cms -= _track_accel * dt * (1 - 0.99f * _limited_speed_xy_cms / _track_speed);
         	if (_limited_speed_xy_cms < 0.0f) {
         	    _limited_speed_xy_cms = 0.0f;
         	}
