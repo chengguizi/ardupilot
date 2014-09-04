@@ -304,6 +304,16 @@
  # define PREARM_MAX_VELOCITY_CMS           50.0f   // vehicle must be travelling under 50cm/s before arming
 #endif
 
+// arming check's maximum acceptable accelerometer vector difference (in m/s/s) between primary and backup accelerometers
+#ifndef PREARM_MAX_ACCEL_VECTOR_DIFF
+  #define PREARM_MAX_ACCEL_VECTOR_DIFF  1.0f    // pre arm accel check will fail if primary and backup accelerometer vectors differ by 1m/s/s
+#endif
+
+// arming check's maximum acceptable rotation rate difference (in rad/sec) between primary and backup gyros
+#ifndef PREARM_MAX_GYRO_VECTOR_DIFF
+  #define PREARM_MAX_GYRO_VECTOR_DIFF   0.35f   // pre arm gyro check will fail if primary and backup gyro vectors differ by 0.35 rad/sec (=20deg/sec)
+#endif
+
 //////////////////////////////////////////////////////////////////////////////
 //  EKF Checker
 #ifndef EKFCHECK_THRESHOLD_DEFAULT
@@ -446,6 +456,12 @@
 #endif
 #ifndef LAND_DETECTOR_TRIGGER
  # define LAND_DETECTOR_TRIGGER 50    // number of 50hz iterations with near zero climb rate and low throttle that triggers landing complete.
+#endif
+#ifndef LAND_DETECTOR_CLIMBRATE_MAX
+# define LAND_DETECTOR_CLIMBRATE_MAX    30  // vehicle climb rate must be between -30 and +30 cm/s
+#endif
+#ifndef LAND_DETECTOR_ROTATION_MAX
+ # define LAND_DETECTOR_ROTATION_MAX    0.50f   // vehicle rotation must be below 0.5 rad/sec (=30deg/sec for) vehicle to consider itself landed
 #endif
 #ifndef LAND_REQUIRE_MIN_THROTTLE_TO_DISARM // require pilot to reduce throttle to minimum before vehicle will disarm
  # define LAND_REQUIRE_MIN_THROTTLE_TO_DISARM ENABLED
