@@ -409,7 +409,7 @@ static void do_circle(const AP_Mission::Mission_Command& cmd)
         circle_center.z = curr_pos.z;
     } else {
 		// CHM - in cm
-		if (fabs(pos_target.z - circle_center.z) > 200.0f)
+		if (fabs(pos_target.z - circle_center.z) > 500.0f)
 			move_to_edge_required = true;
     }
 
@@ -420,7 +420,7 @@ static void do_circle(const AP_Mission::Mission_Command& cmd)
         circle_center.y = curr_pos.y;
     } else {
 		Vector3f pos_diff = circle_center - pos_target;
-		if ( fabs(pos_diff.length() - (float)circle_radius_m * 100.0f) > 282.0f )
+		if ( fabs(pos_diff.length() - (float)circle_radius_m * 100.0f) > 707.0f )
 			move_to_edge_required = true;
     }
 
