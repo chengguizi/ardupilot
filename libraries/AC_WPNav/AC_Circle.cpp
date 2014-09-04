@@ -142,7 +142,7 @@ void AC_Circle::update()
 			const Vector3f &curr_pos =  _inav.get_position();
 			Vector3f pos_diff = target - curr_pos;
 
-			if (pos_diff.length() > _pos_control.get_leash_xy())
+			if (pos_diff.length() > _pos_control.get_leash_xy()*1.2) // make it larger than _leash, so that the pos_diff won't jerk around boundary
 			{
 				// The position difference is too long, stop updating.
 				_angle -= angle_change;
@@ -154,31 +154,34 @@ void AC_Circle::update()
 			float uav_angle = wrap_PI( ToRad(90) + fast_atan2(-(curr_pos.x - _center.x), curr_pos.y - _center.y) );
 			// CHM - all in cm
 
-			Vector2f pos_on_circle;
-			pos_on_circle.x = _center.x + cosf(uav_angle) * _radius;
-			pos_on_circle.y = _center.y + sinf(uav_angle) * _radius;
-
+			Vector2f target_on_circle;
+			Vector2f inter_unit_vector;
 
 			if (_rate >= 0.0f && (wrap_PI(_angle - uav_angle) > 0.2)) // 11.48 degree difference // rotating clockwise
 			{
-				Vector2f inter_unit_vector;
+				target_on_circle.x = _center.x + cosf(wrap_PI(uav_angle + 0.2)) * _radius;
+				target_on_circle.y = _center.y + sinf(wrap_PI(uav_angle + 0.2)) * _radius;
 				// pos diff hasn't reach max, find intermediate angle for target
-				inter_unit_vector.x = cosf(wrap_PI(uav_angle + PI / 2.0f + 0.2f));
-				inter_unit_vector.y = sinf(wrap_PI(uav_angle + PI / 2.0f + 0.2f));
+				inter_unit_vector.x = target_on_circle.x - curr_pos.x;
+				inter_unit_vector.y = target_on_circle.y - curr_pos.y;
+				inter_unit_vector.normalize();
 
-				target.x = pos_on_circle.x + inter_unit_vector.x * pos_diff.length();
-				target.y = pos_on_circle.y + inter_unit_vector.y * pos_diff.length();
+				target.x = curr_pos.x + inter_unit_vector.x * pos_diff.length();
+				target.y = curr_pos.y + inter_unit_vector.y * pos_diff.length();
 				// _radius confirm != 0
 				
 			}
 			else if ( _rate < 0.0f && (wrap_PI(_angle - uav_angle) < -0.2))
 			{
-				Vector2f inter_unit_vector;
-				inter_unit_vector.x = cosf(wrap_PI(uav_angle - PI / 2.0f - 0.2f));
-				inter_unit_vector.y = sinf(wrap_PI(uav_angle - PI / 2.0f - 0.2f));
+				target_on_circle.x = _center.x + cosf(wrap_PI(uav_angle - 0.2)) * _radius;
+				target_on_circle.y = _center.y + sinf(wrap_PI(uav_angle - 0.2)) * _radius;
 
-				target.x = pos_on_circle.x + inter_unit_vector.x * pos_diff.length();
-				target.y = pos_on_circle.y + inter_unit_vector.y * pos_diff.length();
+				inter_unit_vector.x = target_on_circle.x - curr_pos.x;
+				inter_unit_vector.y = target_on_circle.y - curr_pos.y;
+				inter_unit_vector.normalize();
+
+				target.x = curr_pos.x + inter_unit_vector.x * pos_diff.length();
+				target.y = curr_pos.y + inter_unit_vector.y * pos_diff.length();
 			}
 
 			// update position controller target
