@@ -336,6 +336,7 @@ private:
 
     // parameters
     AP_Float    _throttle_hover;        // estimated throttle required to maintain a level hover
+	AP_Int8		_use_linear;
 
     // internal variables
     float       _dt;                    // time difference (in seconds) between calls from the main program

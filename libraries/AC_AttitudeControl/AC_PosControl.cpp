@@ -13,6 +13,14 @@ const AP_Param::GroupInfo AC_PosControl::var_info[] PROGMEM = {
     // @User: Advanced
     AP_GROUPINFO("THR_HOVER",       0, AC_PosControl, _throttle_hover, POSCONTROL_THROTTLE_HOVER),
 
+	// @Param: USE_LINEAR
+	// @DisplayName: Use linear responce throughout
+	// @Description: use linear responce to transform position error to velocity error.
+	// @Range: 0 1
+	// @Units: 
+	// @User: Advanced
+	AP_GROUPINFO("USE_LINEAR", 1, AC_PosControl, _use_linear, 0),
+
     AP_GROUPEND
 };
 
@@ -744,8 +752,14 @@ void AC_PosControl::pos_to_rate_xy(bool use_desired_rate, float dt)
 		// CHM - _pos_target is acquired during case 0
 		// CHM - to indirectly decrease the _leash, increase _pos_error by some multiple.
 		// CHM - assume by the distance of leash, the speed reduce by half, from max. speed, using max. deceleration
-        _pos_error.x = (_pos_target.x - curr_pos.x) *1.2f;
-        _pos_error.y = (_pos_target.y - curr_pos.y) *1.2f;
+		_pos_error.x = (_pos_target.x - curr_pos.x);
+		_pos_error.y = (_pos_target.y - curr_pos.y);
+
+		if (!_use_linear)
+		{
+			_pos_error.x *= 1.2f;
+			_pos_error.y *= 1.2f;
+		}
 
 		// CHM - IMPORTANT, there is no safeguard to protect against sudden change in _pos_error
 		// this may cause excessive acceleration (rate of change of velocity) being commanded
@@ -768,18 +782,30 @@ void AC_PosControl::pos_to_rate_xy(bool use_desired_rate, float dt)
 		// CHM - higher the gain, lower the linear distance
 		// CHM - important discovery, by math analysis:
 		// in linear region, the gradient is kP, after 2 linear_distance, the gradient gradually decrease
-        linear_distance = _accel_cms/(2.0f*kP*kP);
+		if (!_use_linear)
+		{
+			linear_distance = _accel_cms / (2.0f*kP*kP);
 
-        if (_distance_to_target > 2.0f*linear_distance) {
-            // velocity response grows with the square root of the distance
-            float vel_sqrt = safe_sqrt(2.0f*_accel_cms*(_distance_to_target-linear_distance));
-            _vel_target.x = vel_sqrt * _pos_error.x/_distance_to_target;
-            _vel_target.y = vel_sqrt * _pos_error.y/_distance_to_target;
-        }else{
-            // velocity response grows linearly with the distance
-            _vel_target.x = _p_pos_xy.kP() * _pos_error.x;
-            _vel_target.y = _p_pos_xy.kP() * _pos_error.y;
-        }
+			if (_distance_to_target > 2.0f*linear_distance) {
+				// velocity response grows with the square root of the distance
+				float vel_sqrt = safe_sqrt(2.0f*_accel_cms*(_distance_to_target - linear_distance));
+				_vel_target.x = vel_sqrt * _pos_error.x / _distance_to_target;
+				_vel_target.y = vel_sqrt * _pos_error.y / _distance_to_target;
+			}
+			else{
+				// velocity response grows linearly with the distance
+				_vel_target.x = _p_pos_xy.kP() * _pos_error.x;
+				_vel_target.y = _p_pos_xy.kP() * _pos_error.y;
+			}
+		}
+		else
+		{
+			// CHM - linear responce, max pos_error is _leash, which giving max. velocity _speed_cms
+			_vel_target.x = _pos_error.x / _leash * _speed_cms;
+			_vel_target.y = _pos_error.y / _leash * _speed_cms;
+		}
+
+        
 
         // decide velocity limit due to position error
         float vel_max_from_pos_error;
@@ -959,7 +985,10 @@ float AC_PosControl::calc_leash_length(float speed_cms, float accel_cms, float k
 		// offset of the sqrt function from origin, which acts to smooth out the pos_to_vel response curve
 		//
 		// Theoritically, the leash_length as _pos_error will result in exactly _vel_desired == _speed_cms
-        leash_length = (accel_cms / (2.0f*kP*kP)) + (speed_cms*speed_cms / (2.0f*accel_cms));
+		if (!_use_linear)
+			leash_length = (accel_cms / (2.0f*kP*kP)) + (speed_cms*speed_cms / (2.0f*accel_cms));
+		else
+			leash_length = (speed_cms*speed_cms / (2.0f*accel_cms))*0.75f; // distance to slow down to half of the max speed.
     }
 
     // ensure leash is at least 1m long
