@@ -777,7 +777,8 @@ void AC_WPNav::set_spline_destination(const Vector3f& destination, bool stopped_
 void AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const Vector3f& destination, bool stopped_at_start, spline_segment_end_type seg_end_type, const Vector3f& next_destination)
 {
     // mission is "active" if wpnav has been called recently and vehicle reached the previous waypoint
-    bool prev_segment_exists = (_flags.reached_destination && ((hal.scheduler->millis() - _wp_last_update) < 1000));
+    // CHM - _flags.reached_destination can be used to detect if there is a previous nav cmd
+	bool prev_segment_exists = (_flags.reached_destination && ((hal.scheduler->millis() - _wp_last_update) < 1000));
 
     // check _wp_accel_cms is reasonable to avoid divide by zero
     if (_wp_accel_cms <= 0) {

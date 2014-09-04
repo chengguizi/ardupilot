@@ -54,9 +54,12 @@ void AC_Circle::init(const Vector3f& center)
     // initialise position controller (sets target roll angle, pitch angle and I terms based on vehicle current lean angles)
     _pos_control.init_xy_controller();
 
+	//CHM - extract from later commented functions
+	_pos_control.calc_leash_length_xy();
+	_pos_control.calc_leash_length_z();
     // set initial position target to reasonable stopping point
-    _pos_control.set_target_to_stopping_point_xy();
-    _pos_control.set_target_to_stopping_point_z();
+    //_pos_control.set_target_to_stopping_point_xy();
+    //_pos_control.set_target_to_stopping_point_z();
 
     // calculate velocities
     calc_velocities();
