@@ -935,21 +935,34 @@ void AC_PosControl::accel_to_lean_angles()
 	// Therefore only change the ANGLE_MAX is not effective. hardcode needed
 
 	// CHM - this assumes that the UAV is at hover.
-	// However, when the UAV is accelerating vertically, the horizontal acceleration at given angle changes.
-	// ADD:
-	/*static float thrust_accel = GRAVITY_MSS * 100.0f;
-	// vertical thrust acceleration
-	thrust_accel += 0.2f * ( -(_ahrs.get_accel_ef().z) * 100.0f - thrust_accel); // 2 Hz filter
-	// compensate the vertical acceleration
-	if ((float)fabs(accel_right) > thrust_accel)
-		accel_right = accel_right * (float)fabs( thrust_accel / accel_right);
-	if ((float)fabs(accel_forward) > thrust_accel)
-		accel_forward = accel_forward * (float)fabs(thrust_accel / accel_forward);
+	if (!_use_linear)
+	{
+		_roll_target = constrain_float(fast_atan(accel_right / (GRAVITY_MSS * 100))*(18000 / M_PI), -lean_angle_max, lean_angle_max);
+		_pitch_target = constrain_float(fast_atan(-accel_forward / (GRAVITY_MSS * 100))*(18000 / M_PI), -lean_angle_max, lean_angle_max);
+	}
+	else
+	{
+		float total_accel = safe_sqrt(accel_forward*accel_forward + accel_right*accel_right);
+		float alpha = atanf(total_accel / (GRAVITY_MSS*100.0f));
+		alpha = constrain_float(alpha, 0.0f, lean_angle_max);
+		
+		float beta = atan2f(accel_right, accel_forward);
 
-	_roll_target = constrain_float(fast_atan(accel_right / thrust_accel)*(18000 / M_PI), -lean_angle_max, lean_angle_max);
-	_pitch_target = constrain_float(fast_atan(-accel_forward / thrust_accel)*(18000 / M_PI), -lean_angle_max, lean_angle_max);*/
-	_roll_target = constrain_float(fast_atan(accel_right / (GRAVITY_MSS * 100))*(18000 / M_PI), -lean_angle_max, lean_angle_max);
-	_pitch_target = constrain_float(fast_atan(-accel_forward / (GRAVITY_MSS * 100))*(18000 / M_PI), -lean_angle_max, lean_angle_max);
+		_pitch_target = atan2f(-sinf(alpha)*cosf(beta),cosf(alpha));
+		_pitch_target = constrain_float(_pitch_target, -lean_angle_max, lean_angle_max);
+
+		if (beta >= 0.0f)
+		{
+			_roll_target = acosf(cosf(alpha) / cosf(_pitch_target));
+		}
+		else
+		{
+			_roll_target = -acosf(cosf(alpha) / cosf(_pitch_target));
+		}
+		_roll_target = constrain_float(_roll_target, -lean_angle_max, lean_angle_max);
+
+	}
+	
 }
 
 // get_lean_angles_to_accel - convert roll, pitch lean angles to lat/lon frame accelerations in cm/s/s
