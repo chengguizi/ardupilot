@@ -597,7 +597,7 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
 	if (i < 0 || i >= 25)
 	{
 		i = 0;
-		hal.uartC->printf_P(PSTR("_track_desired = %f, _track_length = %f" ), _track_desired, _track_length);
+		hal.uartC->printf_P(PSTR("_track_desired = %.0f, _track_length = %.0f\n" ), _track_desired, _track_length);
 	}
 	else
 		i++;

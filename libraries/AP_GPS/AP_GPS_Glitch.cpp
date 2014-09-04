@@ -133,9 +133,8 @@ void GPS_Glitch::check_position()
 	debug_send_message(MSG_NAMED_VALUE_FLOAT);
 	///////////////////////////
 	*/
-	if (distance_cm > 20)
+	if (distance_cm > 90)
 	{
-		hal.uartC->printf_P(PSTR("GPS difference:%f"),distance_cm);
 		Log_Write_Data(DATA_GPS_LOCATION_DIFFERENCE_CM, (float)distance_cm);
 		Vector2f locdiff = location_diff(curr_pos, gps_pos);
 		Log_Write_Data(DATA_GPS_LOCATION_DIFFERENCE_X, (float)locdiff.x*100.0f);
@@ -146,6 +145,7 @@ void GPS_Glitch::check_position()
 	if (distance_cm <= _radius_cm) {
         all_ok = true;
     }else{
+		hal.uartC->printf_P(PSTR("GPS difference_xy:%.0f !!!\n"), distance_cm);
         // or if within the maximum distance we could have moved based on our acceleration
         accel_based_distance = 0.5f * _accel_max_cmss * sane_dt * sane_dt;
         all_ok = (distance_cm <= accel_based_distance);
@@ -169,10 +169,11 @@ void GPS_Glitch::check_position()
 		mydebug.valuef = gps_pos.alt - curr_pos.alt;
 		debug_send_message(MSG_NAMED_VALUE_FLOAT);
 		//////////////////////////*/
-		if (distance_cm > 20.0f || distance_cm < -100.0f)
+		if (distance_cm > 90.0f || distance_cm < -100.0f)
 			Log_Write_Data(DATA_GPS_ALTITUDE_DIFFERENCE, (float)(gps_pos.alt - curr_pos.alt));
 
 		if ( (float)fabs(distance_cm) > _radius_cm ) {
+			hal.uartC->printf_P(PSTR("GPS difference_z:%.0f !!!\n"), distance_cm);
 			// or if within the maximum distance we could have moved based on our acceleration
 			if (distance_cm > 0.0f)
 			{

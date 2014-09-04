@@ -41,11 +41,11 @@ void userhook_SlowLoop()
 
 	float accel_z = ahrs.get_accel_ef().z+ GRAVITY_MSS;
 	Vector2f accel_xy;
-	accel_xy.x = ahrs.get_accel_ef().x*100;
-	accel_xy.y = ahrs.get_accel_ef().y*100;
+	accel_xy.x = ahrs.get_accel_ef().x;
+	accel_xy.y = ahrs.get_accel_ef().y;
 
-	if( fabs(v_xy)>1.0 || fabs(v_z)>1.0 || fabs(accel_xy.length())>100.0 || fabs(accel_z)>100.0)
-		hal.uartC->printf_P(PSTR("Vxy=%5.0f  Vz=%5.0f   Axy=%5.0f  Az=%5.0f\n"),v_xy,v_z,accel_xy.length(),accel_z);
+	if( fabs(v_xy)>5.0 || fabs(v_z)>5.0 || fabs(accel_xy.length())>2.0 || fabs(accel_z)>2.0)
+		hal.uartC->printf_P(PSTR("Vxy=%5.1f  Vz=%5.1f   Axy=%5.1f  Az=%5.1f\n"),v_xy,v_z,accel_xy.length(),accel_z);
 	
     // put your 3.3Hz code here
 }
