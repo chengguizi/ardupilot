@@ -140,47 +140,49 @@ void AC_Circle::update()
             target.z = _pos_control.get_alt_target();
 
 			const Vector3f &curr_pos =  _inav.get_position();
-
 			Vector3f pos_diff = target - curr_pos;
-			float bearing_rad = ToRad(90) + fast_atan2(-(curr_pos.x - _center.x), curr_pos.y - _center.y);
-			float uav_angle = wrap_PI(bearing_rad);
-			// CHM - all in cm
-			if (fabs(wrap_PI(_angle - uav_angle)) > 0.2f) // 11.48 degree difference // rotating clockwise
+
+			if (pos_diff.length() > _pos_control.get_leash_xy())
 			{
-				if (pos_diff.length() >= _pos_control.get_leash_xy())
-				{
-					_angle -= angle_change;
-					_angle = wrap_PI(_angle);
-					_angle_total -= angle_change;
-				}
-				else
-				{
-					// pos diff hasn't reach max, find intermediate angle for target
-					Vector3f inter_unit_vector ;
-					inter_unit_vector.z=0.0f;
-					if ( wrap_PI(_angle - uav_angle) >= 0.0f) // clockwise
-					{
-						inter_unit_vector.x = cosf( wrap_PI( uav_angle + PI / 2.0f + 0.2f));
-						inter_unit_vector.y = sinf(	wrap_PI(uav_angle + PI / 2.0f + 0.2f));
-					}
-					else
-					{
-						inter_unit_vector.x = cosf(wrap_PI(uav_angle - PI / 2.0f - 0.2f));
-						inter_unit_vector.y = sinf(wrap_PI(uav_angle - PI / 2.0f - 0.2f));
-					}
-					target.x = curr_pos.x +inter_unit_vector.x * pos_diff.length();
-					target.y = curr_pos.x + inter_unit_vector.y * pos_diff.length();
-					// _radius confirm != 0
-					_pos_control.set_pos_target(target);
-				}
+				// The position difference is too long, stop updating.
+				_angle -= angle_change;
+				_angle = wrap_PI(_angle);
+				_angle_total -= angle_change;
+				return;
+			}
+
+			float uav_angle = wrap_PI( ToRad(90) + fast_atan2(-(curr_pos.x - _center.x), curr_pos.y - _center.y) );
+			// CHM - all in cm
+
+			Vector2f pos_on_circle;
+			pos_on_circle.x = _center.x + cosf(uav_angle) * _radius;
+			pos_on_circle.y = _center.y + sinf(uav_angle) * _radius;
+
+
+			if (_rate >= 0.0f && (wrap_PI(_angle - uav_angle) > 0.2)) // 11.48 degree difference // rotating clockwise
+			{
+				Vector2f inter_unit_vector;
+				// pos diff hasn't reach max, find intermediate angle for target
+				inter_unit_vector.x = cosf(wrap_PI(uav_angle + PI / 2.0f + 0.2f));
+				inter_unit_vector.y = sinf(wrap_PI(uav_angle + PI / 2.0f + 0.2f));
+
+				target.x = pos_on_circle.x + inter_unit_vector.x * pos_diff.length();
+				target.y = pos_on_circle.y + inter_unit_vector.y * pos_diff.length();
+				// _radius confirm != 0
 				
 			}
-			else
+			else if ( _rate < 0.0f && (wrap_PI(_angle - uav_angle) < -0.2))
 			{
-				// update position controller target
-				_pos_control.set_pos_target(target);
+				Vector2f inter_unit_vector;
+				inter_unit_vector.x = cosf(wrap_PI(uav_angle - PI / 2.0f - 0.2f));
+				inter_unit_vector.y = sinf(wrap_PI(uav_angle - PI / 2.0f - 0.2f));
+
+				target.x = pos_on_circle.x + inter_unit_vector.x * pos_diff.length();
+				target.y = pos_on_circle.y + inter_unit_vector.y * pos_diff.length();
 			}
 
+			// update position controller target
+			_pos_control.set_pos_target(target);
             
 
             // heading is 180 deg from vehicles target position around circle
