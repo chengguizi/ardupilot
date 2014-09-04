@@ -439,6 +439,7 @@ static void do_circle(const AP_Mission::Mission_Command& cmd)
         auto_circle_movetoedge_start();
     } else {
         // start circling
+		gcs_send_text_P(SEVERITY_HIGH,PSTR("Direct Circle Start"));
         auto_circle_start();
     }
 }
