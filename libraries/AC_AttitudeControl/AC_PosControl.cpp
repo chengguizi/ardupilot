@@ -944,22 +944,19 @@ void AC_PosControl::accel_to_lean_angles()
 	{
 		float total_accel = safe_sqrt(accel_forward*accel_forward + accel_right*accel_right);
 		float alpha = atanf(total_accel / (GRAVITY_MSS*100.0f));
-		alpha = constrain_float(alpha, 0.0f, lean_angle_max);
+		alpha = constrain_float(alpha, 0.0f, lean_angle_max/18000.0f*PI);
 		
 		float beta = atan2f(accel_right, accel_forward);
 
 		_pitch_target = atan2f(-sinf(alpha)*cosf(beta),cosf(alpha));
-		_pitch_target = constrain_float(_pitch_target, -lean_angle_max, lean_angle_max);
 
 		if (beta >= 0.0f)
-		{
 			_roll_target = acosf(cosf(alpha) / cosf(_pitch_target));
-		}
 		else
-		{
 			_roll_target = -acosf(cosf(alpha) / cosf(_pitch_target));
-		}
-		_roll_target = constrain_float(_roll_target, -lean_angle_max, lean_angle_max);
+
+		_pitch_target = constrain_float(_pitch_target / PI*18000.0f, -lean_angle_max, lean_angle_max);
+		_roll_target = constrain_float(_roll_target / PI*18000.0f, -lean_angle_max, lean_angle_max);
 
 	}
 	
