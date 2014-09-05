@@ -85,8 +85,6 @@ void AC_Circle::init(const Vector3f& center)
     // set start angle from position
     init_start_angle(false);
 
-	_max_angle_diff = constrain_float(_max_angle_diff, 0.0f, PI);
-
 	update();
 }
 
@@ -115,7 +113,6 @@ void AC_Circle::init()
     // set starting angle from vehicle heading
     init_start_angle(true);
 
-	_max_angle_diff = constrain_float(_max_angle_diff, 0.0f, PI);
 
 	update();
 }
@@ -194,7 +191,10 @@ void AC_Circle::update()
 				_angle -= angle_change;
 				_angle = wrap_PI(_angle);
 				_angle_total -= angle_change;
-				return;
+
+				// ADD this to make sure at the start of circle, the UAV come close to circle first.
+				target.x = _center.x + ofs_radius * cosf(-_angle);
+				target.y = _center.y - ofs_radius * sinf(-_angle);	
 			}
 
 			
@@ -337,7 +337,7 @@ void AC_Circle::calc_velocities()
         // angular_velocity in radians per second
 		// CHM - This is tangential acceleration
 		// CHM - we should give room for acceleration towards center
-        _angular_accel = _pos_control.get_accel_xy()/_radius;
+        _angular_accel = _pos_control.get_accel_xy()/_radius * 0.707; //CHM - limit tangential acceleration, to give room for centripedal accel
         if (_rate < 0.0f) {
 			// CHM - positive is clockwise, negetive is CCW
             _angular_accel = -_angular_accel;
