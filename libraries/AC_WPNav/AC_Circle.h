@@ -89,6 +89,8 @@ private:
     // parameters
     AP_Float    _radius;        // maximum horizontal speed in cm/s during missions
     AP_Float    _rate;          // rotation speed in deg/sec
+	AP_Float	_radius_offset_p;	// CHM - This is to give a offset from the position targe on the circle, so that to generate extra accel to compensate higher tangential speed
+	AP_Float	_max_angle_diff;
 
     // internal variables
     uint32_t    _last_update;   // time of last update_loiter call

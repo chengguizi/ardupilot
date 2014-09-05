@@ -23,6 +23,24 @@ const AP_Param::GroupInfo AC_Circle::var_info[] PROGMEM = {
     // @User: Standard
     AP_GROUPINFO("RATE",    1, AC_Circle, _rate,    AC_CIRCLE_RATE_DEFAULT),
 
+	// @Param: Max angle difference
+	// @DisplayName: Max angle difference
+	// @Description:
+	// @Units: 
+	// @Range: 
+	// @Increment:
+	// @User: Advanced
+	AP_GROUPINFO("MAXDIFF", 2, AC_Circle, _radius_offset_p, 0.0f),
+
+	// @Param: Radius Offset Gain
+	// @DisplayName: Radius Offset Gain
+	// @Description:
+	// @Units: 
+	// @Range: 
+	// @Increment:
+	// @User: Advanced
+	AP_GROUPINFO("OFS_P", 3, AC_Circle, _max_angle_diff, 0.2f),
+
     AP_GROUPEND
 };
 
@@ -92,6 +110,8 @@ void AC_Circle::init()
 
     // set starting angle from vehicle heading
     init_start_angle(true);
+
+	_max_angle_diff = constrain_float(_max_angle_diff, 0.0f, PI);
 }
 
 /// update - update circle controller
@@ -136,16 +156,31 @@ void AC_Circle::update()
 
         // if the circle_radius is zero we are doing panorama so no need to update loiter target
         if (_radius != 0.0f) {
+			const Vector3f &curr_pos = _inav.get_position();
+			float uav_angle = wrap_PI(ToRad(90) + fast_atan2(-(curr_pos.x - _center.x), curr_pos.y - _center.y));
+			float tangent;
+			
+			if (_rate >= 0.0f)
+				tangent = wrap_PI(uav_angle + PI / 4);
+			else
+				tangent = wrap_PI(uav_angle - PI / 4);
+
+			float tangential_speed = cosf(tangent)*_inav.get_velocity().x + sinf(tangent)*_inav.get_velocity().y;
+
+			tangential_speed = constrain_float(tangential_speed, 0.0f, _inav.get_velocity_xy());
+
+			float ofs_radius = constrain_float(_radius - tangential_speed * tangential_speed / _radius * _radius_offset_p, 10.0f, _radius);
+
             // calculate target position
             Vector3f target;
-            target.x = _center.x + _radius * cosf(-_angle);
-            target.y = _center.y - _radius * sinf(-_angle);
+			target.x = _center.x + ofs_radius * cosf(-_angle);
+			target.y = _center.y - ofs_radius * sinf(-_angle);
             target.z = _pos_control.get_alt_target();
 
-			const Vector3f &curr_pos =  _inav.get_position();
+			
 			Vector3f pos_diff = target - curr_pos;
 
-			if (pos_diff.length() > _pos_control.get_leash_xy()*1.2) // make it larger than _leash, so that the pos_diff won't jerk around boundary
+			if (pos_diff.length() > _pos_control.get_leash_xy()*1.5) // make it larger than _leash, so that the pos_diff won't jerk around boundary
 			{
 				// The position difference is too long, stop updating.
 				_angle -= angle_change;
@@ -154,16 +189,16 @@ void AC_Circle::update()
 				return;
 			}
 
-			float uav_angle = wrap_PI( ToRad(90) + fast_atan2(-(curr_pos.x - _center.x), curr_pos.y - _center.y) );
+			
 			// CHM - all in cm
 
 			Vector2f target_on_circle;
 			Vector2f inter_unit_vector;
 
-			if (_rate >= 0.0f && (wrap_PI(_angle - uav_angle) > 0.2)) // 11.48 degree difference // rotating clockwise
+			if (_rate >= 0.0f && (wrap_PI(_angle - uav_angle) > _max_angle_diff)) // 11.48 degree difference // rotating clockwise
 			{
-				target_on_circle.x = _center.x + cosf(wrap_PI(uav_angle + 0.2)) * _radius;
-				target_on_circle.y = _center.y + sinf(wrap_PI(uav_angle + 0.2)) * _radius;
+				target_on_circle.x = _center.x + cosf(wrap_PI(uav_angle + _max_angle_diff)) * ofs_radius;
+				target_on_circle.y = _center.y + sinf(wrap_PI(uav_angle + _max_angle_diff)) * ofs_radius;
 				// pos diff hasn't reach max, find intermediate angle for target
 				inter_unit_vector.x = target_on_circle.x - curr_pos.x;
 				inter_unit_vector.y = target_on_circle.y - curr_pos.y;
@@ -174,10 +209,10 @@ void AC_Circle::update()
 				// _radius confirm != 0
 				
 			}
-			else if ( _rate < 0.0f && (wrap_PI(_angle - uav_angle) < -0.2))
+			else if (_rate < 0.0f && (wrap_PI(_angle - uav_angle) < -_max_angle_diff))
 			{
-				target_on_circle.x = _center.x + cosf(wrap_PI(uav_angle - 0.2)) * _radius;
-				target_on_circle.y = _center.y + sinf(wrap_PI(uav_angle - 0.2)) * _radius;
+				target_on_circle.x = _center.x + cosf(wrap_PI(uav_angle - _max_angle_diff)) * ofs_radius;
+				target_on_circle.y = _center.y + sinf(wrap_PI(uav_angle - _max_angle_diff)) * ofs_radius;
 
 				inter_unit_vector.x = target_on_circle.x - curr_pos.x;
 				inter_unit_vector.y = target_on_circle.y - curr_pos.y;
