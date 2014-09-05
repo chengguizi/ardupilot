@@ -801,8 +801,9 @@ void AC_PosControl::pos_to_rate_xy(bool use_desired_rate, float dt)
 		else
 		{
 			// CHM - linear responce, max pos_error is _leash, which giving max. velocity _speed_cms
-			_vel_target.x = _pos_error.x / _leash * _speed_cms;
-			_vel_target.y = _pos_error.y / _leash * _speed_cms;
+			float percent = sinf(_distance_to_target / _leash * (PI / 4) );
+			_vel_target.x = _pos_error.x * percent * _speed_cms;
+			_vel_target.y = _pos_error.y * percent * _speed_cms;
 		}
 
         
