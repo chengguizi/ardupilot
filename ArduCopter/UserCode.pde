@@ -25,9 +25,9 @@ void userhook_50Hz()
 #ifdef USERHOOK_MEDIUMLOOP
 void userhook_MediumLoop()
 {
-	strcpy(mydebug.name, "decoupl_k");
-	mydebug.valuef = attitude_control.pitch_decouple_factor;
-	debug_send_message(MSG_NAMED_VALUE_FLOAT);
+	//strcpy(mydebug.name, "decoupl_k");
+	//mydebug.valuef = attitude_control.pitch_decouple_factor;
+	//debug_send_message(MSG_NAMED_VALUE_FLOAT);
     // put your 10Hz code here
 }
 #endif
@@ -44,7 +44,7 @@ void userhook_SlowLoop()
 	accel_xy.x = ahrs.get_accel_ef().x;
 	accel_xy.y = ahrs.get_accel_ef().y;
 
-	if( fabs(v_xy)>5.0 || fabs(v_z)>5.0 || fabs(accel_xy.length())>2.0 || fabs(accel_z)>2.0)
+	if( fabs(v_xy)>9.0 || fabs(v_z)>2.0 || fabs(accel_xy.length())>4.0 || fabs(accel_z)>3.0)
 		hal.uartC->printf_P(PSTR("Vxy=%5.1f  Vz=%5.1f   Axy=%5.1f  Az=%5.1f\n"),v_xy,v_z,accel_xy.length(),accel_z);
 	
     // put your 3.3Hz code here

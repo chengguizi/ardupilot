@@ -224,5 +224,7 @@ void GPS_Glitch::check_position()
     
     // update glitching flag
     _flags.glitching = !all_ok;
+	if (_flags.glitching)
+		hal.uartC->printf_P(PSTR("GPS GLITCH !!!\n"));
 }
 

@@ -177,14 +177,7 @@ void AC_Circle::update()
 
 			float ofs_radius = constrain_float(_radius - tangential_speed * tangential_speed / _radius * _radius_offset_p, 10.0f, _radius);
 
-			static int i = 0;
-			if (i >= 10)
-			{
-				hal.uartC->printf_P(PSTR("Circle TanSpeed:%5.1f m/s  Offset Radius:%5.1f m\n"), tangential_speed / 100.0f, ofs_radius/100.0f);
-				i = 0;
-			}
-			else
-				i++;
+
 
             // calculate target position
             Vector3f target;
@@ -248,6 +241,18 @@ void AC_Circle::update()
 				_yaw = wrap_PI(_angle + PI/2.0f) * AC_CIRCLE_DEGX100;
 			else
 				_yaw = wrap_PI(_angle - PI / 2.0f) * AC_CIRCLE_DEGX100;
+
+			static int i = 0;
+			if (i >= 10)
+			{
+				hal.uartC->printf_P(PSTR("Circle TanSpeed:%5.1f m/s  Offset Radius:%5.1f m\n"), tangential_speed / 100.0f, ofs_radius / 100.0f);
+				hal.uartC->printf_P(PSTR("Circle Target Angle= %3.0f degree\n"), _angle/PI*180.0f);
+				i = 0;
+			}
+			else
+				i++;
+
+
         }else{
             // set target position to center
             Vector3f target;
