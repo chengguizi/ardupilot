@@ -30,7 +30,7 @@ const AP_Param::GroupInfo AC_Circle::var_info[] PROGMEM = {
 	// @Range: 
 	// @Increment:
 	// @User: Advanced
-	AP_GROUPINFO("MAXDIFF", 2, AC_Circle, _radius_offset_p, 0.0f),
+	AP_GROUPINFO("MAXDIFF", 2, AC_Circle, _max_angle_diff, 0.2f),
 
 	// @Param: Radius Offset Gain
 	// @DisplayName: Radius Offset Gain
@@ -39,7 +39,7 @@ const AP_Param::GroupInfo AC_Circle::var_info[] PROGMEM = {
 	// @Range: 
 	// @Increment:
 	// @User: Advanced
-	AP_GROUPINFO("OFS_P", 3, AC_Circle, _max_angle_diff, 0.2f),
+	AP_GROUPINFO("OFS_P", 3, AC_Circle, _radius_offset_p, 0.0f),
 
     AP_GROUPEND
 };
