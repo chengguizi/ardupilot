@@ -19,7 +19,7 @@ const AP_Param::GroupInfo AC_PosControl::var_info[] PROGMEM = {
 	// @Range: 0 1
 	// @Units: 
 	// @User: Advanced
-	AP_GROUPINFO("USE_LINE", 1, AC_PosControl, _use_linear, 0),
+	AP_GROUPINFO("USE_LINE", 1, AC_PosControl, _use_linear, 1),
 
     AP_GROUPEND
 };

@@ -84,6 +84,10 @@ void AC_Circle::init(const Vector3f& center)
 
     // set start angle from position
     init_start_angle(false);
+
+	_max_angle_diff = constrain_float(_max_angle_diff, 0.0f, PI);
+
+	update();
 }
 
 /// init - initialise circle controller setting center using stopping point and projecting out based on the copter's heading
@@ -112,6 +116,8 @@ void AC_Circle::init()
     init_start_angle(true);
 
 	_max_angle_diff = constrain_float(_max_angle_diff, 0.0f, PI);
+
+	update();
 }
 
 /// update - update circle controller
@@ -364,7 +370,10 @@ void AC_Circle::init_start_angle(bool use_heading)
             // get bearing from circle center to vehicle in radians
 			// CHM - starting angle of LOITER_TURNS is defined here
 			float bearing_rad = ToRad(90) + fast_atan2(-(curr_pos.x - _center.x), curr_pos.y - _center.y);
-            _angle = wrap_PI(bearing_rad);
+			if (_rate>=0)
+				_angle = wrap_PI(bearing_rad + 0.15f);
+			else
+				_angle = wrap_PI(bearing_rad - 0.15f);
 			hal.uartC->printf_P(PSTR("circle start bearing: %f dgree\n"), _angle/PI*180.0f);
 			hal.console->printf_P(PSTR("circle start bearing: %f dgree\n"), _angle / PI*180.0f);
         }
