@@ -1,5 +1,7 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
+static bool circle_started;
+
 // forward declarations to make compiler happy
 static void do_takeoff(const AP_Mission::Mission_Command& cmd);
 static void do_nav_wp(const AP_Mission::Mission_Command& cmd);
@@ -404,6 +406,8 @@ static void do_circle(const AP_Mission::Mission_Command& cmd)
     bool move_to_edge_required = false;
 	const Vector3f &pos_target = pos_control.get_pos_target();
 
+	circle_started = false;
+
     // set target altitude if not provided
     if (cmd.content.location.alt == 0) {
         circle_center.z = curr_pos.z;
@@ -439,7 +443,7 @@ static void do_circle(const AP_Mission::Mission_Command& cmd)
         auto_circle_movetoedge_start();
     } else {
         // start circling
-		gcs_send_text_P(SEVERITY_HIGH,PSTR("Direct Circle Start"));
+		gcs_send_text_P(SEVERITY_HIGH,PSTR("Direct Circle"));
         auto_circle_start();
     }
 }
@@ -669,7 +673,7 @@ static bool verify_circle(const AP_Mission::Mission_Command& cmd)
             }
 
             // start circling
-			gcs_send_text_P(SEVERITY_HIGH,PSTR("Circle Start"));
+			gcs_send_text_P(SEVERITY_HIGH,PSTR("Circle"));
             auto_circle_start();
         }
         return false;
@@ -677,9 +681,21 @@ static bool verify_circle(const AP_Mission::Mission_Command& cmd)
 
     // check if we have completed circling
 	// CHM - this is the place to check the rounds, can be modified!
-	bool ret = (fabsf(circle_nav.get_angle_total() / (2.0 * M_PI)) - 0.125) >= (float)LOWBYTE(cmd.p1);
+	float abs_turns = fabsf(circle_nav.get_angle_total() / (2.0 * M_PI)) - 0.125f;
+
+	if (!circle_started && abs_turns > 0.0f)
+	{
+		circle_started = true;
+		gcs_send_text_P(SEVERITY_HIGH, PSTR("Circle Engaged"));
+	}
+	
+	bool ret = (abs_turns >= (float)LOWBYTE(cmd.p1));
 	if (ret)
+	{
 		gcs_send_text_P(SEVERITY_HIGH, PSTR("Circle End"));
+		circle_started = false;
+	}
+		
     return ret;
 }
 

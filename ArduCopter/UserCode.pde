@@ -54,11 +54,14 @@ void userhook_SlowLoop()
 #ifdef USERHOOK_SUPERSLOWLOOP
 void userhook_SuperSlowLoop()
 {
-    // put your 1Hz code here
-	//gcs_send_message(MSG_NAMED_VALUE_FLOAT);
-	//gcs_send_text_P(SEVERITY_MEDIUM, PSTR("message test"));
-	//hal.console->print_P(PSTR("CHM test message - hal.console \n"));
-	//hal.uartC->print_P(PSTR("CHM test message - uartC \n"));
+	static int i;
+	if (circle_started)
+	{
+		hal.uartC->printf_P(PSTR("%d %.9f %.9f 1\n"), i, inertial_nav.get_latitude() * 1.0e-7f, inertial_nav.get_longitude() *1.0e-7f);
+		i++;
+	}
+	else
+		i = 0;
 
 }
 #endif
