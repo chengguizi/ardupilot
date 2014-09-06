@@ -1,6 +1,5 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
-static bool circle_started;
 
 // forward declarations to make compiler happy
 static void do_takeoff(const AP_Mission::Mission_Command& cmd);
