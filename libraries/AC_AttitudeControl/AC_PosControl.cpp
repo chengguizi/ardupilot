@@ -802,8 +802,8 @@ void AC_PosControl::pos_to_rate_xy(bool use_desired_rate, float dt)
 		{
 			// CHM - linear responce, max pos_error is _leash, which giving max. velocity _speed_cms
 			float percent = sinf(_distance_to_target / _leash * (PI / 4) );
-			_vel_target.x = _pos_error.x * percent * _speed_cms;
-			_vel_target.y = _pos_error.y * percent * _speed_cms;
+			_vel_target.x = _pos_error.x / _distance_to_target * percent * _speed_cms;
+			_vel_target.y = _pos_error.y / _distance_to_target * percent * _speed_cms;
 		}
 
         
@@ -999,7 +999,7 @@ float AC_PosControl::calc_leash_length(float speed_cms, float accel_cms, float k
 		if (!_use_linear)
 			leash_length = (accel_cms / (2.0f*kP*kP)) + (speed_cms*speed_cms / (2.0f*accel_cms));
 		else
-			leash_length = (speed_cms*speed_cms / (2.0f*accel_cms))*0.75f; // distance to slow down to half of the max speed.
+			leash_length = (speed_cms*speed_cms / (2.0f*accel_cms)); // distance to slow down to half of the max speed.
     }
 
     // ensure leash is at least 1m long
