@@ -796,7 +796,7 @@ void AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
     // calculate spline velocity at origin
     if (stopped_at_start || !prev_segment_exists) {
     	// if vehicle is stopped at the origin, set origin velocity to 0.1 * distance vector from origin to destination
-		_spline_origin_vel = (destination - origin).normalized() * 0.1f; // CHM - limit to 0.1m/s at start
+		_spline_origin_vel = (destination - origin).normalized() * 0.1f; // CHM - limit to almost zero at start, not necessarily 0.1m/s
     	_spline_time = 0.0f;
     	_spline_vel_scaler = 0.0f;
     }else{
@@ -956,9 +956,11 @@ void AC_WPNav::advance_spline_target_along_track(float dt)
             _spline_time_scale = _spline_vel_scaler/target_vel_length;
 
 			// CHM - now limit the _spline_time_scale furthur down, if acceleration exceed the _wp_accel_cms
-			if (_spline_time_scale * target_accel.length() > _wp_accel_cms)
+			float equivalent_accel = _spline_time_scale * _spline_time_scale * target_accel.length();
+			if (equivalent_accel > _wp_accel_cms)
 			{
-				_spline_time_scale *= _wp_accel_cms / (_spline_time_scale * target_accel.length());
+				_spline_time_scale *= safe_sqrt(_wp_accel_cms / equivalent_accel);
+				hal.uartC->printf_P(PSTR("Spline: [Accel limit] %f\n"), equivalent_accel);
 			}
         }
 
