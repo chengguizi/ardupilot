@@ -813,11 +813,12 @@ void AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
             // Note: previous segment will leave destination velocity parallel to position difference vector
             //       from previous segment's origin to this segment's destination)
             _spline_origin_vel = _spline_destination_vel;
-            if (_spline_time > 1.0f && _spline_time < 1.1f) {    // To-Do: remove hard coded 1.1f
+            /*if (_spline_time > 1.0f && _spline_time < 1.1f) {    // To-Do: remove hard coded 1.1f
                 _spline_time -= 1.0f;
             }else{
                 _spline_time = 0.0f;
-            }
+            }*/
+			_spline_time = 0.0f;
             // Note: we leave _spline_vel_scaler as it was from end of previous segment
         }
     }
@@ -970,14 +971,18 @@ void AC_WPNav::advance_spline_target_along_track(float dt)
         // update the yaw
         _yaw = RadiansToCentiDegrees(fast_atan2(target_vel.y,target_vel.x));
 
+		// CHM - add feedback from actual positon
+		Vector3f pos_error = target_pos - _inav.get_position();
+
         // advance spline time to next step
-        _spline_time += _spline_time_scale*dt;
+		// CHM - ADD constraint to update
+		if (pos_error.length() < _pos_control.get_leash_xy()*1.2f)
+			_spline_time += _spline_time_scale*dt;
 
         // we will reach the next waypoint in the next step so set reached_destination flag
         // To-Do: is this one step too early?
-		// CHM - add feedback from actual positon
-		Vector3f pos_error = _destination - _inav.get_position();
-        if (_spline_time > 1.0f && pos_error.length() < _pos_control.get_leash_xy() ) {
+		pos_error = _destination - _inav.get_position();
+		if ((_spline_time > 1.0f && pos_error.length() < _pos_control.get_leash_xy()*1.2f) || _spline_time > 1.1f) {
             _flags.reached_destination = true;
         }
     }
