@@ -796,7 +796,7 @@ void AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
     // calculate spline velocity at origin
     if (stopped_at_start || !prev_segment_exists) {
     	// if vehicle is stopped at the origin, set origin velocity to 0.1 * distance vector from origin to destination
-		_spline_origin_vel = (destination - origin).normalized() * 0.1f; // CHM - limit to almost zero at start, not necessarily 0.1m/s
+		_spline_origin_vel = (destination - origin).normalized(); // CHM - limit to almost zero at start, not necessarily 0.1m/s
     	_spline_time = 0.0f;
     	_spline_vel_scaler = 0.0f;
     }else{
@@ -804,7 +804,7 @@ void AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
         if (_flags.segment_type == SEGMENT_STRAIGHT) {
             // previous segment is straight, vehicle is moving so vehicle should fly straight through the origin
             // before beginning it's spline path to the next waypoint. Note: we are using the previous segment's origin and destination
-            _spline_origin_vel = (_destination - _origin).normalized() * _pos_control.get_speed_xy(); // CHM do we need to modify this to match current velocity?
+            _spline_origin_vel = (_destination - _origin); // CHM do we need to modify this to match current velocity? no
             _spline_time = 0.0f;	// To-Do: this should be set based on how much overrun there was from straight segment?
             _spline_vel_scaler = _pos_control.get_vel_target().length();    // start velocity target from current target velocity
         }else{
@@ -827,19 +827,19 @@ void AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
 
     case SEGMENT_END_STOP:
         // if vehicle stops at the destination set destination velocity to 0.1 * distance vector from origin to destination
-        _spline_destination_vel = (destination - origin).normalized() * 0.1f; // change to 0.1m/s in magenitude
+        _spline_destination_vel = (destination - origin); // change to 0.1m/s in magenitude
         _flags.fast_waypoint = false;
         break;
 
     case SEGMENT_END_STRAIGHT:
         // if next segment is straight, vehicle's final velocity should face along the next segment's position
-		_spline_destination_vel = (next_destination - destination).normalized() * _pos_control.get_speed_xy();
+		_spline_destination_vel = (next_destination - destination);
         _flags.fast_waypoint = true;
         break;
 
     case SEGMENT_END_SPLINE:
         // if next segment is splined, vehicle's final velocity should face parallel to the line from the origin to the next destination
-		_spline_destination_vel = (next_destination - origin).normalized() * _pos_control.get_speed_xy();
+		_spline_destination_vel = (next_destination - origin);
         _flags.fast_waypoint = true;
         break;
     }
@@ -851,7 +851,7 @@ void AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
         // if total start+stop velocity is more than twice position difference
         // use a scaled down start and stop velocityscale the  start and stop velocities down
         float vel_scaling = pos_len / vel_len;
-		hal.uartC->printf_P(PSTR("Spline: Being rescaled, vel_scaling=%5.1f!!!!!!!!!!\n"), vel_scaling);
+		hal.uartC->printf_P(PSTR("Spline: Being rescaled, vel_scaling=%f!!!!!!!!!!\n"), vel_scaling);
         // update spline calculator
         update_spline_solution(origin, destination, _spline_origin_vel * vel_scaling, _spline_destination_vel * vel_scaling);
     }else{
