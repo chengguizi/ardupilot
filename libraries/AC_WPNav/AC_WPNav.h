@@ -254,7 +254,7 @@ protected:
 
     /// calc_spline_pos_vel - update position and velocity from given spline time
     /// 	relies on update_spline_solution being called since the previous
-    void calc_spline_pos_vel(float spline_time, Vector3f& position, Vector3f& velocity);
+	void calc_spline_pos_vel(float spline_time, Vector3f& position, Vector3f& velocity, Vector3f& acceleration);
 
     // references to inertial nav and ahrs libraries
     const AP_InertialNav&   _inav;

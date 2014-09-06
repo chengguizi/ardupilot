@@ -796,7 +796,7 @@ void AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
     // calculate spline velocity at origin
     if (stopped_at_start || !prev_segment_exists) {
     	// if vehicle is stopped at the origin, set origin velocity to 0.1 * distance vector from origin to destination
-    	_spline_origin_vel = (destination - origin) * 0.1f;
+		_spline_origin_vel = (destination - origin).normalized() * 0.1f; // CHM - limit to 0.1m/s at start
     	_spline_time = 0.0f;
     	_spline_vel_scaler = 0.0f;
     }else{
@@ -804,7 +804,7 @@ void AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
         if (_flags.segment_type == SEGMENT_STRAIGHT) {
             // previous segment is straight, vehicle is moving so vehicle should fly straight through the origin
             // before beginning it's spline path to the next waypoint. Note: we are using the previous segment's origin and destination
-            _spline_origin_vel = (_destination - _origin);
+            _spline_origin_vel = (_destination - _origin).normalized() * _pos_control.get_speed_xy(); // CHM do we need to modify this to match current velocity?
             _spline_time = 0.0f;	// To-Do: this should be set based on how much overrun there was from straight segment?
             _spline_vel_scaler = _pos_control.get_vel_target().length();    // start velocity target from current target velocity
         }else{
@@ -827,30 +827,31 @@ void AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
 
     case SEGMENT_END_STOP:
         // if vehicle stops at the destination set destination velocity to 0.1 * distance vector from origin to destination
-        _spline_destination_vel = (destination - origin) * 0.1f;
+        _spline_destination_vel = (destination - origin).normalized() * 0.1f; // change to 0.1m/s in magenitude
         _flags.fast_waypoint = false;
         break;
 
     case SEGMENT_END_STRAIGHT:
         // if next segment is straight, vehicle's final velocity should face along the next segment's position
-        _spline_destination_vel = (next_destination - destination);
+		_spline_destination_vel = (next_destination - destination).normalized() * _pos_control.get_speed_xy();
         _flags.fast_waypoint = true;
         break;
 
     case SEGMENT_END_SPLINE:
         // if next segment is splined, vehicle's final velocity should face parallel to the line from the origin to the next destination
-        _spline_destination_vel = (next_destination - origin);
+		_spline_destination_vel = (next_destination - origin).normalized() * _pos_control.get_speed_xy();
         _flags.fast_waypoint = true;
         break;
     }
 
     // code below ensures we don't get too much overshoot when the next segment is short
-    float vel_len = (_spline_origin_vel + _spline_destination_vel).length();
+    float vel_len = (_spline_origin_vel - _spline_destination_vel).length(); // CHM - changed to minus sign
     float pos_len = (destination - origin).length() * 4.0f;
     if (vel_len > pos_len) {
         // if total start+stop velocity is more than twice position difference
         // use a scaled down start and stop velocityscale the  start and stop velocities down
         float vel_scaling = pos_len / vel_len;
+		hal.uartC->printf_P(PSTR("Spline: Being rescaled, vel_scaling=%5.1f!!!!!!!!!!\n"), vel_scaling);
         // update spline calculator
         update_spline_solution(origin, destination, _spline_origin_vel * vel_scaling, _spline_destination_vel * vel_scaling);
     }else{
@@ -921,13 +922,14 @@ void AC_WPNav::update_spline_solution(const Vector3f& origin, const Vector3f& de
  }
 
 /// advance_spline_target_along_track - move target location along track from origin to destination
+// CHM - called at 50 hz, dt ~= 0.02
 void AC_WPNav::advance_spline_target_along_track(float dt)
 {
     if (!_flags.reached_destination) {
-        Vector3f target_pos, target_vel;
+        Vector3f target_pos, target_vel, target_accel;
 
         // update target position and velocity from spline calculator
-        calc_spline_pos_vel(_spline_time, target_pos, target_vel);
+		calc_spline_pos_vel(_spline_time, target_pos, target_vel, target_accel);
 
         // update velocity
         float spline_dist_to_wp = (_destination - target_pos).length();
@@ -938,7 +940,8 @@ void AC_WPNav::advance_spline_target_along_track(float dt)
         }else if(_spline_vel_scaler < _wp_speed_cms) {
             // increase velocity using acceleration
         	// To-Do: replace 0.1f below with update frequency passed in from main program
-            _spline_vel_scaler += _wp_accel_cms* 0.1f;
+			// CHM - can add fake wind to this
+			_spline_vel_scaler += _wp_accel_cms* dt * (1 - 0.85f * _spline_vel_scaler / _wp_speed_cms);
         }
 
         // constrain target velocity
@@ -947,9 +950,16 @@ void AC_WPNav::advance_spline_target_along_track(float dt)
         }
 
         // scale the spline_time by the velocity we've calculated vs the velocity that came out of the spline calculator
+		// CHM - target_vel is from the result of equation
         float target_vel_length = target_vel.length();
         if (target_vel_length != 0.0f) {
             _spline_time_scale = _spline_vel_scaler/target_vel_length;
+
+			// CHM - now limit the _spline_time_scale furthur down, if acceleration exceed the _wp_accel_cms
+			if (_spline_time_scale * target_accel.length() > _wp_accel_cms)
+			{
+				_spline_time_scale *= _wp_accel_cms / (_spline_time_scale * target_accel.length());
+			}
         }
 
         // update target position
@@ -963,7 +973,9 @@ void AC_WPNav::advance_spline_target_along_track(float dt)
 
         // we will reach the next waypoint in the next step so set reached_destination flag
         // To-Do: is this one step too early?
-        if (_spline_time >= 1.0f) {
+		// CHM - add feedback from actual positon
+		Vector3f pos_error = _destination - _inav.get_position();
+        if (_spline_time > 1.0f && pos_error.length() < _pos_control.get_leash_xy() ) {
             _flags.reached_destination = true;
         }
     }
@@ -971,7 +983,7 @@ void AC_WPNav::advance_spline_target_along_track(float dt)
 
 // calc_spline_pos_vel_accel - calculates target position, velocity and acceleration for the given "spline_time"
 /// 	relies on update_spline_solution being called when the segment's origin and destination were set
-void AC_WPNav::calc_spline_pos_vel(float spline_time, Vector3f& position, Vector3f& velocity)
+void AC_WPNav::calc_spline_pos_vel(float spline_time, Vector3f& position, Vector3f& velocity, Vector3f& acceleration)
 {
     float spline_time_sqrd = spline_time * spline_time;
     float spline_time_cubed = spline_time_sqrd * spline_time;
@@ -984,6 +996,10 @@ void AC_WPNav::calc_spline_pos_vel(float spline_time, Vector3f& position, Vector
     velocity = _hermite_spline_solution[1] + \
                _hermite_spline_solution[2] * 2.0f * spline_time + \
                _hermite_spline_solution[3] * 3.0f * spline_time_sqrd;
+
+	// CHM - add acceleration in path planning, used to limit the max acceleration of the planned path later on
+	acceleration =	_hermite_spline_solution[2] * 2.0f + \
+					_hermite_spline_solution[3] * 6.0f * spline_time;
 }
 
 
