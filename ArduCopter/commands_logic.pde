@@ -677,7 +677,7 @@ static bool verify_circle(const AP_Mission::Mission_Command& cmd)
 
     // check if we have completed circling
 	// CHM - this is the place to check the rounds, can be modified!
-	bool ret = (fabsf(circle_nav.get_angle_total() / (2 * M_PI)) - 0.02) >= (float)LOWBYTE(cmd.p1);
+	bool ret = (fabsf(circle_nav.get_angle_total() / (2.0 * M_PI)) - 0.125) >= (float)LOWBYTE(cmd.p1);
 	if (ret)
 		gcs_send_text_P(SEVERITY_HIGH, PSTR("Circle End"));
     return ret;
