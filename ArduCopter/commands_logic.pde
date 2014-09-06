@@ -438,11 +438,12 @@ static void do_circle(const AP_Mission::Mission_Command& cmd)
 
     // check if we need to move to edge of circle
     if (move_to_edge_required) {
+		gcs_send_text_P(SEVERITY_HIGH, PSTR("Move to Circle"));
         // move to edge of circle (verify_circle) will ensure we begin circling once we reach the edge
         auto_circle_movetoedge_start();
     } else {
         // start circling
-		gcs_send_text_P(SEVERITY_HIGH,PSTR("Direct Circle"));
+		//gcs_send_text_P(SEVERITY_HIGH,PSTR("Direct Circle"));
         auto_circle_start();
     }
 }
@@ -672,7 +673,6 @@ static bool verify_circle(const AP_Mission::Mission_Command& cmd)
             }
 
             // start circling
-			gcs_send_text_P(SEVERITY_HIGH,PSTR("Circle"));
             auto_circle_start();
         }
         return false;
@@ -684,6 +684,7 @@ static bool verify_circle(const AP_Mission::Mission_Command& cmd)
 
 	if (!circle_started && abs_turns > 0.0f)
 	{
+		gcs_send_text_P(SEVERITY_HIGH, PSTR("Circle Engaged"));
 		circle_started = true;
 		gcs_send_text_P(SEVERITY_HIGH, PSTR("Circle Engaged"));
 	}
