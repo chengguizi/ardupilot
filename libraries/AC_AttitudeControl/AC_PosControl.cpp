@@ -936,7 +936,7 @@ void AC_PosControl::accel_to_lean_angles()
 	// Therefore only change the ANGLE_MAX is not effective. hardcode needed
 
 	// CHM - this assumes that the UAV is at hover.
-	if (!_use_linear)
+	if (1 == 0) // disable original code
 	{
 		_roll_target = constrain_float(fast_atan(accel_right / (GRAVITY_MSS * 100))*(18000 / M_PI), -lean_angle_max, lean_angle_max);
 		_pitch_target = constrain_float(fast_atan(-accel_forward / (GRAVITY_MSS * 100))*(18000 / M_PI), -lean_angle_max, lean_angle_max);
