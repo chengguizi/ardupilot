@@ -285,7 +285,7 @@ void AC_WPNav::calc_loiter_desired_velocity(float nav_dt)
 	// In max. acceleration, it can achieve 90% of max. velocity in 5 sec
 
 	desired_vel.x += _loiter_desired_accel.x * nav_dt
-		- 0.667*(_loiter_accel_cms - WPNAV_LOITER_ACCEL_MIN)*nav_dt*desired_vel.x / _loiter_speed_cms;
+		- 0.85*(_loiter_accel_cms - WPNAV_LOITER_ACCEL_MIN)*nav_dt*desired_vel.x / _loiter_speed_cms;
         
 	if(desired_vel.x > 0 ) {
 		// CHM - when the desired velocity is too small, make it 0
@@ -295,7 +295,7 @@ void AC_WPNav::calc_loiter_desired_velocity(float nav_dt)
     }
 
 	desired_vel.y += _loiter_desired_accel.y * nav_dt
-		- 0.667*(_loiter_accel_cms - WPNAV_LOITER_ACCEL_MIN)*nav_dt*desired_vel.y / _loiter_speed_cms;
+		- 0.85*(_loiter_accel_cms - WPNAV_LOITER_ACCEL_MIN)*nav_dt*desired_vel.y / _loiter_speed_cms;
         
 	if(desired_vel.y > 0 ) {
         desired_vel.y = max(desired_vel.y - WPNAV_LOITER_ACCEL_MIN*nav_dt, 0);
@@ -545,7 +545,7 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
 			// CHM - WHY there is a coefficient 2.0 ???
 			// CHM - edit: delete 2.0f
 			// CHM - add fake wind
-			_limited_speed_xy_cms += _track_accel * dt * (1 - 0.667f * _limited_speed_xy_cms / _track_speed);
+			_limited_speed_xy_cms += _track_accel * dt * (1 - 0.85f * _limited_speed_xy_cms / _track_speed);
         }
         // do not allow speed to be below zero or over top speed
 		// CHM - should it be _track_speed * pos_delta_unit_xy ? no
@@ -580,7 +580,7 @@ void AC_WPNav::advance_wp_target_along_track(float dt)
         	_track_desired = track_desired_max;
 			// CHM - edit: delete 2.0f
         	//_limited_speed_xy_cms -= _track_accel * dt;
-			_limited_speed_xy_cms -= _track_accel * dt * (1 - 0.667f * _limited_speed_xy_cms / _track_speed);
+			_limited_speed_xy_cms -= _track_accel * dt * (1 - 0.85f * _limited_speed_xy_cms / _track_speed);
         	if (_limited_speed_xy_cms < 0.0f) {
         	    _limited_speed_xy_cms = 0.0f;
         	}
