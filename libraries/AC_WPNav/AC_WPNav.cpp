@@ -364,9 +364,11 @@ void AC_WPNav::wp_and_spline_init()
 
     // initialise position controller
     _pos_control.init_xy_controller();
+
 	// CHM - clear desired velocity, so it does not interefer with the auto mode
 	// Need to be verified
-	_pos_control.set_desired_velocity_xy(0.0f, 0.0f);
+	const Vector3f& curr_vel = _inav.get_velocity();
+	_pos_control.set_desired_velocity_xy(curr_vel.x, curr_vel.y);
 
     // initialise position controller speed and acceleration
 	// CHM - WPNAV_SPEED
