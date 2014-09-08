@@ -401,6 +401,11 @@ static void do_circle(const AP_Mission::Mission_Command& cmd)
 {
     Vector3f curr_pos = inertial_nav.get_position();
     Vector3f circle_center = pv_location_to_vector(cmd.content.location);
+
+	// CHM - send circle center to GCS
+	hal.uartC->printf_P(PSTR("Cirle Centre:  %.9f  %.9f\n"), cmd.content.location.lat, cmd.content.location.lng);
+	gcs_send_text_fmt(PSTR("Cirle Centre:  %.9f  %.9f\n"), cmd.content.location.lat, cmd.content.location.lng);
+
     uint8_t circle_radius_m = HIGHBYTE(cmd.p1); // circle radius held in high byte of p1
     bool move_to_edge_required = false;
 	const Vector3f &pos_target = pos_control.get_pos_target();
