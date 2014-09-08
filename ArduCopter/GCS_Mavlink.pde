@@ -280,7 +280,7 @@ static void NOINLINE send_location(mavlink_channel_t chan)
     mavlink_msg_global_position_int_send(
         chan,
         fix_time,
-		// The location is not raw GPS position
+		// CHM - The location is not raw GPS position
         current_loc.lat,                // in 1E7 degrees
         current_loc.lng,                // in 1E7 degrees
         gps.location().alt * 10UL,      // millimeters above sea level
@@ -733,6 +733,7 @@ const AP_Param::GroupInfo GCS_MAVLINK::var_info[] PROGMEM = {
 
 
 // see if we should send a stream now. Called at 50Hz
+// CHM - the place to determine whether a type of mavlink message should be sent.
 bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
 {
     if (stream_num >= NUM_STREAMS) {

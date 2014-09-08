@@ -200,6 +200,7 @@ void AP_InertialNav::correct_with_gps(uint32_t now, int32_t lon, int32_t lat)
                 hist_position_base_x = _hist_position_estimate_x.front();
                 hist_position_base_y = _hist_position_estimate_y.front();
             }else{
+				// CHM - _position_base is based on inertial navigation, not corrected by gps
                 hist_position_base_x = _position_base.x;
                 hist_position_base_y = _position_base.y;
             }

@@ -224,6 +224,8 @@ void AP_AHRS_NavEKF::set_home(const Location &loc)
 }
 
 // return true if inertial navigation is active
+
+// CHM - always return false if EKF_USE is false
 bool AP_AHRS_NavEKF::have_inertial_nav(void) const 
 {
     return using_EKF();
@@ -250,6 +252,7 @@ bool AP_AHRS_NavEKF::get_relative_position_NED(Vector3f &vec) const
     return false;
 }
 
+// CHM - always return false if EKF_USE is false
 bool AP_AHRS_NavEKF::using_EKF(void) const
 {
     return ekf_started && _ekf_use && EKF.healthy();
