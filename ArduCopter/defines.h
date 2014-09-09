@@ -317,6 +317,7 @@ enum FlipState {
 #define DATA_GPS_ALTITUDE_DIFFERENCE	57
 #define DATA_GPS_GROW_ALT				58
 #define DATA_WP_TRACK					59
+#define DATA_CIRCLE_MODE				60
 
 // Centi-degrees to radians
 #define DEGX100 5729.57795f

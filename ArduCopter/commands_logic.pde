@@ -692,12 +692,14 @@ static bool verify_circle(const AP_Mission::Mission_Command& cmd)
 		gcs_send_text_P(SEVERITY_HIGH, PSTR("Circle Engaged"));
 		circle_started = true;
 		gcs_send_text_P(SEVERITY_HIGH, PSTR("Circle Engaged"));
+		Log_Write_Data(DATA_CIRCLE_MODE, 1);
 	}
 	
 	bool ret = (abs_turns >= (float)LOWBYTE(cmd.p1));
 	if (ret)
 	{
 		gcs_send_text_P(SEVERITY_HIGH, PSTR("Circle End"));
+		Log_Write_Data(DATA_CIRCLE_MODE, 0);
 		circle_started = false;
 	}
 		
