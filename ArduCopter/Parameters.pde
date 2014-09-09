@@ -393,7 +393,7 @@ const AP_Param::Info var_info[] PROGMEM = {
     // @Description: Controls motor mixing for multicopters.  Not used for Tri or Traditional Helicopters.
     // @Values: 0:Plus, 1:X, 2:V, 3:H, 4:V-Tail, 5:A-Tail, 10:Y6B (New)
     // @User: Standard
-    GSCALAR(frame_orientation, "FRAME",             AP_MOTORS_X_FRAME),
+    GSCALAR(frame_orientation, "FRAME",             AP_MOTORS_V_FRAME),
 
     // @Param: CH7_OPT
     // @DisplayName: Channel 7 option
