@@ -676,7 +676,7 @@ void DataFlash_Class::Log_Write_GPS(const AP_GPS &gps, uint8_t i, int32_t relati
             gps_week      : gps.time_week(i),
             num_sats      : gps.num_sats(i),
             hdop          : gps.get_hdop(i),
-            latitude      : loc.lat,
+            latitude      : loc.lat, // THIS IS RAW DATA
             longitude     : loc.lng,
             rel_altitude  : relative_alt,
             altitude      : loc.alt,
