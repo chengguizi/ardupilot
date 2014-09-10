@@ -164,9 +164,9 @@ void AC_Circle::update()
 			float tangent;
 			
 			if (_rate >= 0.0f)
-				tangent = wrap_PI(uav_angle + PI / 4);
+				tangent = wrap_PI(uav_angle + PI / 2.0f);
 			else
-				tangent = wrap_PI(uav_angle - PI / 4);
+				tangent = wrap_PI(uav_angle - PI / 2.0f);
 
 			float tangential_speed = cosf(tangent)*_inav.get_velocity().x + sinf(tangent)*_inav.get_velocity().y;
 
