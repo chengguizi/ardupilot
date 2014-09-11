@@ -296,6 +296,9 @@ static void init_ardupilot()
     }
 
     cliSerial->print_P(PSTR("\nReady to FLY "));
+
+    // flag that initialisation has completed
+    ap.initialised = true;
 }
 
 
