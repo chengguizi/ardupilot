@@ -828,7 +828,7 @@ void AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
 
     case SEGMENT_END_STOP:
         // if vehicle stops at the destination set destination velocity to 0.1 * distance vector from origin to destination
-        _spline_destination_vel = (destination - origin); // change to 0.1m/s in magenitude
+        _spline_destination_vel = (destination - origin).normalized(); // change to 0.1m/s in magenitude
         _flags.fast_waypoint = false;
         break;
 
@@ -874,7 +874,8 @@ void AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
     _pos_control.set_pos_target(origin);
     _flags.reached_destination = false;
     _flags.segment_type = SEGMENT_SPLINE;
-    _flags.new_wp_destination = true;   // flag new waypoint so we can freeze the pos controller's feed forward and smooth the transition
+	if (stopped_at_start || !prev_segment_exists)
+		_flags.new_wp_destination = true;   // flag new waypoint so we can freeze the pos controller's feed forward and smooth the transition
 }
 
 /// update_spline - update spline controller
@@ -926,6 +927,8 @@ void AC_WPNav::update_spline_solution(const Vector3f& origin, const Vector3f& de
 // CHM - called at 50 hz, dt ~= 0.02
 void AC_WPNav::advance_spline_target_along_track(float dt)
 {
+	static int i = 0;
+
     if (!_flags.reached_destination) {
         Vector3f target_pos, target_vel, target_accel;
 
@@ -961,8 +964,14 @@ void AC_WPNav::advance_spline_target_along_track(float dt)
 			if (equivalent_accel > _wp_accel_cms)
 			{
 				_spline_time_scale *= safe_sqrt(_wp_accel_cms / equivalent_accel);
-				hal.uartC->printf_P(PSTR("Spline: [Accel limit] %f\n"), equivalent_accel);
+				if (i % 20 == 0)
+				{
+					hal.uartC->printf_P(PSTR("Spline: [Accel limit] from %f to %f\n"), equivalent_accel, _spline_time_scale * _spline_time_scale * target_accel.length());
+				}
+				i++;
 			}
+			else
+				i = 0;
         }
 
         // update target position
@@ -982,7 +991,7 @@ void AC_WPNav::advance_spline_target_along_track(float dt)
         // we will reach the next waypoint in the next step so set reached_destination flag
         // To-Do: is this one step too early?
 		pos_error = _destination - _inav.get_position();
-		if ((_spline_time > 1.0f && pos_error.length() < _pos_control.get_leash_xy()*1.2f) || _spline_time > 1.1f) {
+		if (_spline_time > 1.0f) {
             _flags.reached_destination = true;
         }
     }
