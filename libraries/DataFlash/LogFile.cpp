@@ -686,6 +686,27 @@ void DataFlash_Class::Log_Write_GPS(const AP_GPS &gps, uint8_t i, int32_t relati
             apm_time      : hal.scheduler->millis()
         };
         WriteBlock(&pkt, sizeof(pkt));
+		
+		// ADD new GPS, based on filtered GPS location
+		struct log_GPS pkt2 = {
+			LOG_PACKET_HEADER_INIT(LOG_GPS_MSG),
+			status        : 5,
+			gps_week_ms : gps.time_week_ms(i),
+			gps_week : gps.time_week(i),
+			num_sats : gps.num_sats(i),
+			hdop : gps.get_hdop(i),
+			latitude : inertial_nav.get_latitude(),
+			longitude : inertial_nav.get_longitude(),
+			rel_altitude : relative_alt,
+			altitude : loc.alt,
+			ground_speed : (uint32_t)(gps.ground_speed(i) * 100),
+			ground_course : gps.ground_course_cd(i),
+			vel_z : gps.velocity(i).z,
+			apm_time : hal.scheduler->millis()
+		};
+		WriteBlock(&pkt2, sizeof(pkt2));
+		
+
     }
 #if HAL_CPU_CLASS > HAL_CPU_CLASS_16
     if (i > 0) {
