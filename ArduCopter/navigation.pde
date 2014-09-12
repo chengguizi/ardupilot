@@ -3,6 +3,7 @@
 // run_nav_updates - top level call for the autopilot
 // ensures calculations such as "distance to waypoint" are calculated before autopilot makes decisions
 // To-Do - rename and move this function to make it's purpose more clear
+// CHM - 10Hz
 static void run_nav_updates(void)
 {
     // fetch position from inertial navigation
@@ -19,6 +20,7 @@ static void run_nav_updates(void)
 static void calc_position(){
     if( inertial_nav.position_ok() ) {
         // pull position from interial nav library
+		// CHM - calculated from _position
         current_loc.lng = inertial_nav.get_longitude();
         current_loc.lat = inertial_nav.get_latitude();
     }

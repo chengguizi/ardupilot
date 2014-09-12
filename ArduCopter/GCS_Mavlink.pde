@@ -282,6 +282,7 @@ static void NOINLINE send_location(mavlink_channel_t chan)
         chan,
         fix_time,
 		// CHM - The location is not raw GPS position
+		// CHM - calculated from _position
         current_loc.lat,                // in 1E7 degrees
         current_loc.lng,                // in 1E7 degrees
         gps.location().alt * 10UL,      // millimeters above sea level

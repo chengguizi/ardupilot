@@ -59,6 +59,7 @@ bool AP_InertialNav_NavEKF::position_ok() const
  */
 const Vector3f &AP_InertialNav_NavEKF::get_position(void) const 
 {
+	// CHM - have_inertial_nav() is the same as using_EKF()
     if (_ahrs.have_inertial_nav()) {
         return _relpos_cm;
     }
