@@ -929,7 +929,10 @@ void AC_WPNav::advance_spline_target_along_track(float dt)
 {
 	static int i = 0;
 
-    if (!_flags.reached_destination) {
+	if (_spline_time == 0.0f)
+		hal.uartC->printf_P(PSTR("Spline new: %u\n"), (unsigned)hal.scheduler->millis());
+
+	if (!_flags.reached_destination || _spline_time<1.2f) {
         Vector3f target_pos, target_vel, target_accel;
 
         // update target position and velocity from spline calculator
@@ -985,15 +988,18 @@ void AC_WPNav::advance_spline_target_along_track(float dt)
 
         // advance spline time to next step
 		// CHM - ADD constraint to update
-		if (pos_error.length() < _pos_control.get_leash_xy()*1.2f)
+		if (pos_error.length() < _pos_control.get_leash_xy()*1.3f)
 			_spline_time += _spline_time_scale*dt;
 
         // we will reach the next waypoint in the next step so set reached_destination flag
         // To-Do: is this one step too early?
-		pos_error = _destination - _inav.get_position();
-		if (_spline_time > 1.0f) {
+		//pos_error = _destination - _inav.get_position();
+		if (_spline_time >= 1.0f || pos_error.length() < _pos_control.get_leash_xy()*1.2f) {
+			hal.uartC->printf_P(PSTR("Spline Reached - time:%u\n"), (unsigned)hal.scheduler->millis());
             _flags.reached_destination = true;
         }
+
+
     }
 }
 
