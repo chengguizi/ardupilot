@@ -1263,7 +1263,7 @@ static void update_GPS(void)
             // log GPS message
             if (g.log_bitmask & MASK_LOG_GPS) {
 				// CHM - the place where GPS is being logged
-                DataFlash.Log_Write_GPS(gps, i, current_loc.alt);
+                DataFlash.Log_Write_GPS(gps, i, current_loc.alt,inertial_nav);
             }
 
             gps_updated = true;
