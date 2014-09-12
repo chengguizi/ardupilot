@@ -13,6 +13,7 @@
 #include <AP_Baro.h>
 #include <AP_AHRS.h>
 #include <stdint.h>
+#include <AP_InertialNav.h>
 
 #if HAL_CPU_CLASS < HAL_CPU_CLASS_75 && defined(APM_BUILD_DIRECTORY)
   #if (APM_BUILD_TYPE(APM_BUILD_ArduCopter) || defined(__AVR_ATmega1280__))
@@ -56,7 +57,7 @@ public:
     void EnableWrites(bool enable) { _writes_enabled = enable; }
     void Log_Write_Format(const struct LogStructure *structure);
     void Log_Write_Parameter(const char *name, float value);
-	void Log_Write_GPS(const AP_GPS &gps, uint8_t instance, int32_t relative_alt, AP_InertialNav &inav);
+	void Log_Write_GPS(const AP_GPS &gps, uint8_t instance, int32_t relative_alt, const AP_InertialNav& inav);
     void Log_Write_IMU(const AP_InertialSensor &ins);
     void Log_Write_RCIN(void);
     void Log_Write_RCOUT(void);

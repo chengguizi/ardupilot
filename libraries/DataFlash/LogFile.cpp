@@ -664,7 +664,7 @@ void DataFlash_Class::Log_Write_Parameters(void)
 
 
 // Write an GPS packet
-void DataFlash_Class::Log_Write_GPS(const AP_GPS &gps, uint8_t i, int32_t relative_alt, AP_InertialNav &inav)
+void DataFlash_Class::Log_Write_GPS(const AP_GPS &gps, uint8_t i, int32_t relative_alt, const AP_InertialNav& inav)
 {
     if (i == 0) {
         const struct Location &loc = gps.location(i);
@@ -688,7 +688,7 @@ void DataFlash_Class::Log_Write_GPS(const AP_GPS &gps, uint8_t i, int32_t relati
         WriteBlock(&pkt, sizeof(pkt));
 		
 		// ADD new GPS, based on filtered GPS location
-		/*struct log_GPS pkt2 = {
+		struct log_GPS pkt2 = {
 			LOG_PACKET_HEADER_INIT(LOG_GPS_MSG),
 			status        : 5,
 			gps_week_ms : gps.time_week_ms(i),
@@ -704,7 +704,7 @@ void DataFlash_Class::Log_Write_GPS(const AP_GPS &gps, uint8_t i, int32_t relati
 			vel_z : gps.velocity(i).z,
 			apm_time : hal.scheduler->millis()
 		};
-		WriteBlock(&pkt2, sizeof(pkt2));*/
+		WriteBlock(&pkt2, sizeof(pkt2));
 		
 
     }
