@@ -993,7 +993,7 @@ void AC_WPNav::advance_spline_target_along_track(float dt)
 
         // we will reach the next waypoint in the next step so set reached_destination flag
         // To-Do: is this one step too early?
-		//pos_error = _destination - _inav.get_position();
+		pos_error = _destination - target_pos;
 		if (_spline_time >= 1.0f || pos_error.length() < _pos_control.get_leash_xy()*1.2f) {
 			hal.uartC->printf_P(PSTR("Spline Reached - time:%u\n"), (unsigned)hal.scheduler->millis());
             _flags.reached_destination = true;
