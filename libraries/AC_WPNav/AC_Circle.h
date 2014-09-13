@@ -46,6 +46,8 @@ public:
     /// get_angle_total - return total angle in radians that vehicle has circled
     float get_angle_total() const { return _angle_total; }
 
+	void set_angle_total(float angle_total) { _angle_total = angle_total; }
+
     /// update - update circle controller
     void update();
 
@@ -62,6 +64,11 @@ public:
     void get_closest_point_on_circle(Vector3f &result);
 
     static const struct AP_Param::GroupInfo var_info[];
+
+	AP_Float	_start_bearing; // CHM - make this parameter public
+	AP_Float    _rate;          // rotation speed in deg/sec
+
+	float uav_angle;
 
 private:
 
@@ -88,9 +95,10 @@ private:
 
     // parameters
     AP_Float    _radius;        // maximum horizontal speed in cm/s during missions
-    AP_Float    _rate;          // rotation speed in deg/sec
+    
 	AP_Float	_radius_offset_p;	// CHM - This is to give a offset from the position targe on the circle, so that to generate extra accel to compensate higher tangential speed
 	AP_Float	_max_angle_diff;
+	
 
     // internal variables
     uint32_t    _last_update;   // time of last update_loiter call
