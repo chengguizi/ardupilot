@@ -932,8 +932,11 @@ void AC_WPNav::advance_spline_target_along_track(float dt)
 	if (_spline_time == 0.0f)
 		hal.uartC->printf_P(PSTR("Spline new: %u\n"), (unsigned)hal.scheduler->millis());
 
-	if (!_flags.reached_destination || _spline_time<1.2f) {
+
+
+	if (_spline_time <= 1.0f) {
         Vector3f target_pos, target_vel, target_accel;
+
 
         // update target position and velocity from spline calculator
 		calc_spline_pos_vel(_spline_time, target_pos, target_vel, target_accel);
@@ -964,7 +967,7 @@ void AC_WPNav::advance_spline_target_along_track(float dt)
 
 			// CHM - now limit the _spline_time_scale furthur down, if acceleration exceed the _wp_accel_cms
 			float equivalent_accel = _spline_time_scale * _spline_time_scale * target_accel.length();
-			if (equivalent_accel > _wp_accel_cms)
+			if (equivalent_accel > _wp_accel_cms && equivalent_accel != 0.0f)
 			{
 				_spline_time_scale *= safe_sqrt(_wp_accel_cms / equivalent_accel);
 				if (i % 20 == 0)
@@ -983,23 +986,30 @@ void AC_WPNav::advance_spline_target_along_track(float dt)
         // update the yaw
         _yaw = RadiansToCentiDegrees(fast_atan2(target_vel.y,target_vel.x));
 
+
+
+
+
 		// CHM - add feedback from actual positon
 		Vector3f pos_error = target_pos - _inav.get_position();
 
+		if (_spline_time >= 1.0f || (_spline_time + _spline_time_scale*dt * 6 >= 1.0f)) {
+			hal.uartC->printf_P(PSTR("Spline Reached - time:%u\n"), (unsigned)hal.scheduler->millis());
+			hal.uartC->printf_P(PSTR("pos_error=%f m\n"), pos_error.length()/100.0f);
+			_flags.reached_destination = true;
+		}
+
         // advance spline time to next step
 		// CHM - ADD constraint to update
-		if (pos_error.length() < _pos_control.get_leash_xy()*1.3f)
+		if (pos_error.length() < _pos_control.get_leash_xy()*1.1f)
 			_spline_time += _spline_time_scale*dt;
+
+		if (_spline_time > 1.0f)
+			_spline_time = 1.0f;
 
         // we will reach the next waypoint in the next step so set reached_destination flag
         // To-Do: is this one step too early?
-		pos_error = _destination - target_pos;
-		if (_spline_time >= 1.0f || pos_error.length() < _pos_control.get_leash_xy()*1.2f) {
-			hal.uartC->printf_P(PSTR("Spline Reached - time:%u\n"), (unsigned)hal.scheduler->millis());
-            _flags.reached_destination = true;
-        }
-
-
+		//pos_error = _destination - target_pos;
     }
 }
 
