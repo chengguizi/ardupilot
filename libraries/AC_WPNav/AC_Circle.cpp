@@ -254,8 +254,8 @@ void AC_Circle::update()
 			static int i = 0;
 			if (i >= 10)
 			{
-				hal.uartC->printf_P(PSTR("Circle TanSpeed:%5.1f m/s  Offset Radius:%5.1f m\n"), tangential_speed / 100.0f, ofs_radius / 100.0f);
-				hal.uartC->printf_P(PSTR("Circle Target Angle= %3.0f degree\n"), _angle/PI*180.0f);
+				hal.uartC->printf_P(PSTR("Circle TanSpeed:%5.1f m/s  Offset R=%5.1f m\n"), tangential_speed / 100.0f, ofs_radius / 100.0f);
+				hal.uartC->printf_P(PSTR("Circle Target Angle= %3.0f deg\n"), _angle/PI*180.0f);
 				i = 0;
 			}
 			else
@@ -388,8 +388,8 @@ void AC_Circle::init_start_angle(bool use_heading)
 				_angle = wrap_PI(bearing_rad + 0.1f);
 			else
 				_angle = wrap_PI(bearing_rad - 0.1f);
-			hal.uartC->printf_P(PSTR("circle start bearing: %f dgree\n"), _angle/PI*180.0f);
-			hal.console->printf_P(PSTR("circle start bearing: %f dgree\n"), _angle / PI*180.0f);
+			hal.uartC->printf_P(PSTR("Circle [Start Bearing]: %f deg\n"), _angle/PI*180.0f);
+			//hal.console->printf_P(PSTR("Circle [Start Bearing]: %f deg\n"), _angle / PI*180.0f);
         }
 
 		// _radius confirm > 0
@@ -407,7 +407,7 @@ void AC_Circle::init_start_angle(bool use_heading)
 			tan_unit_vector.y = sinf(wrap_PI(_angle - ToRad(90)));
 		}
 		float angular_tan_vel = (curr_vel * tan_unit_vector) / _radius;
-		hal.uartC->printf_P(PSTR("circle starting angluar velocity: %f rad/s\n"),angular_tan_vel);
+		hal.uartC->printf_P(PSTR("Circle [Starting Angluar Velocity]: %f rad/s\n"),angular_tan_vel);
 		_angular_vel = angular_tan_vel;
     }
 }

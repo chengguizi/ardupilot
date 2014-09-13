@@ -376,6 +376,8 @@ static void auto_circle_start()
     // initialise circle controller
     // center was set in do_circle so initialise with current center
     circle_nav.init(circle_nav.get_center());
+
+	gcs_send_text_P(SEVERITY_HIGH, PSTR("Circle Start"));
 }
 
 // auto_circle_run - circle in AUTO flight mode
