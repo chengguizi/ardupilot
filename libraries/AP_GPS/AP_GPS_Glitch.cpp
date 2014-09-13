@@ -177,12 +177,12 @@ void GPS_Glitch::check_position()
 			// or if within the maximum distance we could have moved based on our acceleration
 			if (distance_cm > 0.0f)
 			{
-				accel_based_distance = 0.5f * _accel_max_cmss * sane_dt * sane_dt;
+				accel_based_distance = 0.5f * _accel_max_cmss * 1.5f * sane_dt * sane_dt;
 				all_ok = distance_cm <= accel_based_distance;
 			}
 			else
 			{
-				accel_based_distance = -0.5f * 980 * sane_dt * sane_dt;
+				accel_based_distance = -0.5f * 1200.0f * sane_dt * sane_dt;
 				all_ok = distance_cm >= accel_based_distance;
 			}
 			
