@@ -804,8 +804,9 @@ void AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
         if (_flags.segment_type == SEGMENT_STRAIGHT) {
             // previous segment is straight, vehicle is moving so vehicle should fly straight through the origin
             // before beginning it's spline path to the next waypoint. Note: we are using the previous segment's origin and destination
-            _spline_origin_vel = (_destination - _origin); // CHM do we need to modify this to match current velocity? no
-            _spline_time = 0.0f;	// To-Do: this should be set based on how much overrun there was from straight segment?
+			_spline_origin_vel = (_destination - _origin)*2.0f; // CHM do we need to modify this to match current velocity? no
+			
+			_spline_time = 0.0f;	// To-Do: this should be set based on how much overrun there was from straight segment?
             _spline_vel_scaler = _pos_control.get_vel_target().length();    // start velocity target from current target velocity
         }else{
             // previous segment is splined, vehicle will fly through origin
@@ -834,13 +835,21 @@ void AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
 
     case SEGMENT_END_STRAIGHT:
         // if next segment is straight, vehicle's final velocity should face along the next segment's position
-		_spline_destination_vel = (next_destination - destination);
+		_spline_destination_vel = (next_destination - destination)*2.0f;
         _flags.fast_waypoint = true;
         break;
 
     case SEGMENT_END_SPLINE:
         // if next segment is splined, vehicle's final velocity should face parallel to the line from the origin to the next destination
-		_spline_destination_vel = (next_destination - origin);
+		//_spline_destination_vel = (next_destination - origin);
+		float l1 = (destination - origin).length();
+		float l2 = (next_destination - destination).length();
+
+		_spline_destination_vel = (destination - origin).normalized()*(l2 / (l1 + l2)) + \
+			(next_destination - destination).normalized()*(l1 / (l1 + l2));
+		_spline_destination_vel.normalize();
+		_spline_destination_vel *= (l1 + l2) / 2.0f;
+
         _flags.fast_waypoint = true;
         break;
     }
