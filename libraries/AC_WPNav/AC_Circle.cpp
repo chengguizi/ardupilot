@@ -41,6 +41,15 @@ const AP_Param::GroupInfo AC_Circle::var_info[] PROGMEM = {
 	// @User: Advanced
 	AP_GROUPINFO("OFS_P", 3, AC_Circle, _radius_offset_p, 0.0f),
 
+	// @Param: Start End Bearing
+	// @DisplayName: Start End Bearing
+	// @Description:
+	// @Units: 
+	// @Range: 
+	// @Increment:
+	// @User: Advanced
+	AP_GROUPINFO("BEAR", 4, AC_Circle, _start_bearing, 500.0f),
+
     AP_GROUPEND
 };
 
