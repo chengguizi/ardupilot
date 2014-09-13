@@ -134,7 +134,8 @@ void AC_Circle::update()
     float dt = (now - _last_update) / 1000.0f;
 
     // update circle position at 10hz
-    if (dt > 0.095f) {
+	// CHM - change to 50 hz
+    if (dt > 0.019f) {
 
         // double check dt is reasonable
         if (dt >= 1.0f) {
@@ -254,10 +255,10 @@ void AC_Circle::update()
 				_yaw = wrap_PI(_angle - PI / 2.0f) * AC_CIRCLE_DEGX100;
 
 			static int i = 0;
-			if (i >= 10)
+			if (i >= 50)
 			{
 				hal.uartC->printf_P(PSTR("Circle TanSpeed:%5.1f m/s  Offset R=%5.1f m\n"), tangential_speed / 100.0f, ofs_radius / 100.0f);
-				hal.uartC->printf_P(PSTR("Circle Target Angle= %3.0f deg\n"), _angle/PI*180.0f);
+				hal.uartC->printf_P(PSTR("Circle (Target-uav_angle)= %3.0f deg\n"), wrap_PI(_angle - uav_angle) /PI*180.0f);
 				i = 0;
 			}
 			else
@@ -345,6 +346,8 @@ void AC_Circle::calc_velocities()
 		// CHM - _angular_vel_max is eventually defined as limited _rate
         _angular_vel_max = constrain_float(ToRad(_rate),-_angular_vel_max,_angular_vel_max);
 
+		hal.uartC->printf_P(PSTR("_angular_vel_max:=%f "), _angular_vel_max);
+
         // angular_velocity in radians per second
 		// CHM - This is tangential acceleration
 		// CHM - we should give room for acceleration towards center
@@ -353,6 +356,7 @@ void AC_Circle::calc_velocities()
 			// CHM - positive is clockwise, negetive is CCW
             _angular_accel = -_angular_accel;
         }
+		hal.uartC->printf_P(PSTR(" _angular_accel:=%f\n"), _angular_accel);
     }
 
     // initialise angular velocity
@@ -398,18 +402,12 @@ void AC_Circle::init_start_angle(bool use_heading)
 		const Vector3f &curr_vel = _inav.get_velocity();
 		Vector3f tan_unit_vector;
 		tan_unit_vector.z = 0.0f;
-		if (_rate >= 0.0f) //clockwise
-		{
+
 			tan_unit_vector.x = cosf(wrap_PI(_angle + ToRad(90)));
 			tan_unit_vector.y = sinf(wrap_PI(_angle + ToRad(90)));
-		}
-		else
-		{
-			tan_unit_vector.x = cosf(wrap_PI(_angle - ToRad(90)));
-			tan_unit_vector.y = sinf(wrap_PI(_angle - ToRad(90)));
-		}
+
 		float angular_tan_vel = (curr_vel * tan_unit_vector) / _radius;
-		hal.uartC->printf_P(PSTR("Circle [Starting Angluar Velocity]: %f rad/s\n"),angular_tan_vel);
 		_angular_vel = angular_tan_vel;
+		hal.uartC->printf_P(PSTR("Circle [Starting Angluar Velocity]: %f rad/s\n"), angular_tan_vel);
     }
 }
