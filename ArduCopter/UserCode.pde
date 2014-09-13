@@ -61,10 +61,10 @@ void userhook_SuperSlowLoop()
 	static int i;
 	if (circle_started)
 	{
-		Vector3f pos_diff = inertial_nav.get_position() - circle_nav.get_center();
-		float pos_diff_length = pos_diff.length()/100.0f; // in meter
+		//Vector3f pos_diff = inertial_nav.get_position() - circle_nav.get_center();
+		//float pos_diff_length = pos_diff.length()/100.0f; // in meter
 
-		hal.uartC->printf_P(PSTR("%d %.9f %.9f 1 %.2f\n"), i, inertial_nav.get_latitude() * 1.0e-7f, inertial_nav.get_longitude() *1.0e-7f,pos_diff_length);
+		hal.uartC->printf_P(PSTR("%d %.9f %.9f 1\n"), i, inertial_nav.get_latitude() * 1.0e-7f, inertial_nav.get_longitude() *1.0e-7f);
 		i++;
 	}
 	else

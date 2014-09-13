@@ -257,8 +257,10 @@ void AC_Circle::update()
 			static int i = 0;
 			if (i >= 50)
 			{
-				hal.uartC->printf_P(PSTR("Circle TanSpeed:%5.1f m/s  Offset R=%5.1f m\n"), tangential_speed / 100.0f, ofs_radius / 100.0f);
-				hal.uartC->printf_P(PSTR("Circle (Target-uav_angle)= %3.0f deg\n"), wrap_PI(_angle - uav_angle) /PI*180.0f);
+				Vector3f xy_diff = curr_pos - _center;
+				xy_diff.z = 0.0f;
+				hal.uartC->printf_P(PSTR("Circle TanSpeed:%5.1f m/s  Offset R=%5.1f m  xy_actual=%5.1f\n"), tangential_speed / 100.0f, ofs_radius / 100.0f,xy_diff.length()/100.0f);
+				//hal.uartC->printf_P(PSTR("Circle (Target-uav_angle)= %3.0f deg\n"), wrap_PI(_angle - uav_angle) /PI*180.0f);
 				i = 0;
 			}
 			else

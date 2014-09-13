@@ -713,7 +713,7 @@ static bool verify_circle(const AP_Mission::Mission_Command& cmd)
 
 	}
 
-	float abs_turns = fabsf(circle_nav.get_angle_total() / (2.0 * M_PI)) - 0.1f;
+	float abs_turns = fabsf(circle_nav.get_angle_total() / (2.0 * M_PI)) - 0.015f;
 	bool ret = (abs_turns >= (float)LOWBYTE(cmd.p1));
 	if (ret)
 	{
