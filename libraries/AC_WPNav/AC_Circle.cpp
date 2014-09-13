@@ -387,9 +387,9 @@ void AC_Circle::init_start_angle(bool use_heading)
 			// CHM - starting angle of LOITER_TURNS is defined here
 			float bearing_rad = ToRad(90) + fast_atan2(-(curr_pos.x - _center.x), curr_pos.y - _center.y);
 			if (_rate>=0)
-				_angle = wrap_PI(bearing_rad + 0.1f);
+				_angle = wrap_PI(bearing_rad + 0.25f);
 			else
-				_angle = wrap_PI(bearing_rad - 0.1f);
+				_angle = wrap_PI(bearing_rad - 0.25f);
 			hal.uartC->printf_P(PSTR("Circle [Start Bearing]: %f deg\n"), _angle/PI*180.0f);
 			//hal.console->printf_P(PSTR("Circle [Start Bearing]: %f deg\n"), _angle / PI*180.0f);
         }
