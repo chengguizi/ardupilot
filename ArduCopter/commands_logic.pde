@@ -685,7 +685,7 @@ static bool verify_circle(const AP_Mission::Mission_Command& cmd)
 
     // check if we have completed circling
 	// CHM - this is the place to check the rounds, can be modified!
-	float abs_turns = fabsf(circle_nav.get_angle_total() / (2.0 * M_PI)) - 0.125f;
+	/*float abs_turns = fabsf(circle_nav.get_angle_total() / (2.0 * M_PI)) - 0.125f;
 
 	if (!circle_started && abs_turns > 0.0f)
 	{
@@ -693,8 +693,27 @@ static bool verify_circle(const AP_Mission::Mission_Command& cmd)
 		circle_started = true;
 		gcs_send_text_P(SEVERITY_HIGH, PSTR("Circle Engaged"));
 		Log_Write_Data(DATA_CIRCLE_MODE, 1);
+	}*/
+
+	if (!circle_started && circle_nav._start_bearing >= -180.0f && circle_nav._start_bearing <= 360.0f) // clockwise
+	{
+		if (circle_nav._rate >= 0.0f && (wrap_PI(circle_nav._start_bearing/180.0f*PI - circle_nav.uav_angle) < 0.087f))
+			circle_started = true;
+		else if (circle_nav._rate < 0.0f && (wrap_PI(circle_nav._start_bearing / 180.0f*PI - circle_nav.uav_angle) > -0.087f))
+			circle_started = true;
+
+		if (circle_started == true)
+		{
+			gcs_send_text_P(SEVERITY_HIGH, PSTR("Circle Engaged"));
+			hal.uartC->printf_P(PSTR("Circle [Record Bearing]: %f\n"), circle_nav.uav_angle/PI*180.0f);
+			circle_nav.set_angle_total(0.0f);
+			Log_Write_Data(DATA_CIRCLE_MODE, 1);
+			gcs_send_text_P(SEVERITY_HIGH, PSTR("Circle Engaged"));
+		}
+
 	}
-	
+
+	float abs_turns = fabsf(circle_nav.get_angle_total() / (2.0 * M_PI));
 	bool ret = (abs_turns >= (float)LOWBYTE(cmd.p1));
 	if (ret)
 	{

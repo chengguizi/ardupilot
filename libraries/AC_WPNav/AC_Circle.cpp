@@ -169,7 +169,7 @@ void AC_Circle::update()
         // if the circle_radius is zero we are doing panorama so no need to update loiter target
         if (_radius != 0.0f) {
 			const Vector3f &curr_pos = _inav.get_position();
-			float uav_angle = wrap_PI(ToRad(90) + fast_atan2(-(curr_pos.x - _center.x), curr_pos.y - _center.y));
+			uav_angle = wrap_PI(ToRad(90) + fast_atan2(-(curr_pos.x - _center.x), curr_pos.y - _center.y));
 			float tangent;
 			
 			if (_rate >= 0.0f)
@@ -189,12 +189,14 @@ void AC_Circle::update()
             Vector3f target;
 			target.x = _center.x + ofs_radius * cosf(-_angle);
 			target.y = _center.y - ofs_radius * sinf(-_angle);
-            target.z = _pos_control.get_alt_target();
-
+			// CHM - fix the altitude to the cmd altitude
+            //target.z = _pos_control.get_alt_target();
+			target.z = _center.z;
 			
 			Vector3f pos_diff = target - curr_pos;
+			pos_diff.z = 0.0f;
 
-			if (pos_diff.length() > _pos_control.get_leash_xy()*1.5) // make it larger than _leash, so that the pos_diff won't jerk around boundary
+			if (pos_diff.length() > _pos_control.get_leash_xy()*1.1f || curr_pos.z < _center.z * 0.6f) // make it larger than _leash, so that the pos_diff won't jerk around boundary
 			{
 				// The position difference is too long, stop updating.
 				_angle -= angle_change;
