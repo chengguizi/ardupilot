@@ -796,9 +796,11 @@ void AC_WPNav::set_spline_origin_and_destination(const Vector3f& origin, const V
     // calculate spline velocity at origin
     if (stopped_at_start || !prev_segment_exists) {
     	// if vehicle is stopped at the origin, set origin velocity to 0.1 * distance vector from origin to destination
-		_spline_origin_vel = (destination - origin).normalized(); // CHM - limit to almost zero at start, not necessarily 0.1m/s
+		// CHM - modified
+		const Vector3f &curr_vel = _inav.get_velocity();
+		_spline_origin_vel = curr_vel * 2.5f; 
     	_spline_time = 0.0f;
-    	_spline_vel_scaler = 0.0f;
+    	_spline_vel_scaler = curr_vel.length();
     }else{
     	// look at previous segment to determine velocity at origin
         if (_flags.segment_type == SEGMENT_STRAIGHT) {
