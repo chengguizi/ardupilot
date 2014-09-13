@@ -403,8 +403,8 @@ static void do_circle(const AP_Mission::Mission_Command& cmd)
     Vector3f circle_center = pv_location_to_vector(cmd.content.location);
 
 	// CHM - send circle center to GCS
-	hal.uartC->printf_P(PSTR("Cirle Centre:  %.9f  %.9f\n"), (float)(cmd.content.location.lat/1.0e7), (float)(cmd.content.location.lng/10.0e7));
-	gcs_send_text_fmt(PSTR("Cirle Centre:  %.9f  %.9f\n"), (float)(cmd.content.location.lat/1.0e7), (float)(cmd.content.location.lng/10.0e7));
+	hal.uartC->printf_P(PSTR("Cirle Centre:  %.9f  %.9f\n"), (float)(cmd.content.location.lat/1.0e7), (float)(cmd.content.location.lng/1.0e7));
+	gcs_send_text_fmt(PSTR("Cirle Centre:  %.9f  %.9f\n"), (float)(cmd.content.location.lat/1.0e7), (float)(cmd.content.location.lng/1.0e7));
 
     uint8_t circle_radius_m = HIGHBYTE(cmd.p1); // circle radius held in high byte of p1
     bool move_to_edge_required = false;
@@ -713,7 +713,7 @@ static bool verify_circle(const AP_Mission::Mission_Command& cmd)
 
 	}
 
-	float abs_turns = fabsf(circle_nav.get_angle_total() / (2.0 * M_PI));
+	float abs_turns = fabsf(circle_nav.get_angle_total() / (2.0 * M_PI)) - 0.1f;
 	bool ret = (abs_turns >= (float)LOWBYTE(cmd.p1));
 	if (ret)
 	{
