@@ -11,6 +11,7 @@ static void read_inertia()
 static void read_inertial_altitude()
 {
     // with inertial nav we can update the altitude and climb rate at 50hz
+	// CHM - this is _position.z
     current_loc.alt = inertial_nav.get_altitude();
     current_loc.flags.relative_alt = true;
     climb_rate = inertial_nav.get_velocity_z();

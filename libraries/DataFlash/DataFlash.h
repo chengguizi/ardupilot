@@ -57,7 +57,7 @@ public:
     void EnableWrites(bool enable) { _writes_enabled = enable; }
     void Log_Write_Format(const struct LogStructure *structure);
     void Log_Write_Parameter(const char *name, float value);
-	void Log_Write_GPS(const AP_GPS &gps, uint8_t instance, int32_t relative_alt, const AP_InertialNav& inav);
+	void Log_Write_GPS(const AP_GPS &gps, uint8_t instance, int32_t relative_alt, const AP_InertialNav& inav, const AP_AHRS &ahrs);
     void Log_Write_IMU(const AP_InertialSensor &ins);
     void Log_Write_RCIN(void);
     void Log_Write_RCOUT(void);

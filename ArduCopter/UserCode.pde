@@ -55,7 +55,7 @@ void userhook_SuperSlowLoop()
 	accel_xy.y = ahrs.get_accel_ef().y;
 
 	if (fabs(v_xy)>9.0 || fabs(v_z)>2.0 || fabs(accel_xy.length())>4.0 || fabs(accel_z)>3.0)
-		hal.uartC->printf_P(PSTR("Vxy=%5.1f  Vz=%5.1f   Axy=%5.1f  Az=%5.1f\n"), v_xy, v_z, accel_xy.length(), accel_z);
+		hal.uartC->printf_P(PSTR("Vxy=%5.1f  Vz=%5.1f   Axy=%5.1f  Az=%5.1f Alt=%5.1f m GPSAlt=%5.1f m\n"), v_xy, v_z, accel_xy.length(), accel_z, current_loc.alt/100.0f, (gps.location().alt - ahrs.get_home().alt)/100.0f );
 
 
 	static int i;

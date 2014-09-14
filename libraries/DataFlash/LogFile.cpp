@@ -664,11 +664,12 @@ void DataFlash_Class::Log_Write_Parameters(void)
 
 
 // Write an GPS packet
-void DataFlash_Class::Log_Write_GPS(const AP_GPS &gps, uint8_t i, int32_t relative_alt, const AP_InertialNav& inav)
+void DataFlash_Class::Log_Write_GPS(const AP_GPS &gps, uint8_t i, int32_t relative_alt, const AP_InertialNav& inav, const AP_AHRS &ahrs)
 {
     if (i == 0) {
         const struct Location &loc = gps.location(i);
 		// CHM - This is the format of GPS log in dataflash
+		
         struct log_GPS pkt = {
             LOG_PACKET_HEADER_INIT(LOG_GPS_MSG),
             status        : (uint8_t)gps.status(i),
@@ -678,7 +679,7 @@ void DataFlash_Class::Log_Write_GPS(const AP_GPS &gps, uint8_t i, int32_t relati
             hdop          : gps.get_hdop(i),
             latitude      : loc.lat, // THIS IS RAW DATA
             longitude     : loc.lng,
-            rel_altitude  : relative_alt,
+			rel_altitude  : ahrs.get_home().alt,
             altitude      : loc.alt,
             ground_speed  : (uint32_t)(gps.ground_speed(i) * 100),
             ground_course : gps.ground_course_cd(i),
