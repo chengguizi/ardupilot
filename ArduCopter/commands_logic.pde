@@ -713,14 +713,17 @@ static bool verify_circle(const AP_Mission::Mission_Command& cmd)
 
 	}
 
-	float abs_turns = fabsf(circle_nav.get_angle_total() / (2.0 * M_PI)) - 0.028f; // 10 degree
+	float abs_turns = fabsf(circle_nav.get_angle_total() / (2.0 * M_PI)) - 0.028f; // 10 degree - 0.028
 	bool ret = (abs_turns >= (float)LOWBYTE(cmd.p1));
-	if (ret)
+	if (ret && circle_started)
 	{
 		gcs_send_text_P(SEVERITY_HIGH, PSTR("Circle End"));
 		Log_Write_Data(DATA_CIRCLE_MODE, 0);
 		circle_started = false;
 	}
+
+	abs_turns -= 0.5f;
+	ret = (abs_turns >= (float)LOWBYTE(cmd.p1));
 		
     return ret;
 }
