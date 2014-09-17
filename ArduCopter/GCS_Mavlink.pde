@@ -277,12 +277,11 @@ static void NOINLINE send_location(mavlink_channel_t chan)
     } else {
         fix_time = millis();
     }
+
     const Vector3f &vel = gps.velocity();
     mavlink_msg_global_position_int_send(
         chan,
         fix_time,
-		// CHM - The location is not raw GPS position
-		// CHM - calculated from _position
         current_loc.lat,                // in 1E7 degrees
         current_loc.lng,                // in 1E7 degrees
         gps.location().alt * 10UL,      // millimeters above sea level
