@@ -215,6 +215,7 @@ static void exit_mode(uint8_t old_control_mode, uint8_t new_control_mode)
     // stop mission when we leave auto mode
     if (old_control_mode == AUTO) {
         if (mission.state() == AP_Mission::MISSION_RUNNING) {
+			circle_started = false;
             mission.stop();
         }
 #if MOUNT == ENABLED

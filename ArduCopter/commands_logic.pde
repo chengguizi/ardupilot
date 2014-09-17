@@ -660,6 +660,9 @@ static bool verify_loiter_time()
 // verify_circle - check if we have circled the point enough
 static bool verify_circle(const AP_Mission::Mission_Command& cmd)
 {
+	static bool done_notend = false; // CHM - add
+	if (!circle_started) done_notend = false;
+
     // check if we've reached the edge
     if (auto_mode == Auto_CircleMoveToEdge) {
         if (wp_nav.reached_wp_destination()) {
@@ -715,16 +718,22 @@ static bool verify_circle(const AP_Mission::Mission_Command& cmd)
 
 	float abs_turns = fabsf(circle_nav.get_angle_total() / (2.0 * M_PI)) - 0.028f; // 10 degree - 0.028
 	bool ret = (abs_turns >= (float)LOWBYTE(cmd.p1));
-	if (ret && circle_started)
+	if (ret && !done_notend)
 	{
 		gcs_send_text_P(SEVERITY_HIGH, PSTR("Circle End"));
 		Log_Write_Data(DATA_CIRCLE_MODE, 0);
-		circle_started = false;
+		done_notend = true;
 	}
 
 	abs_turns -= 0.5f;
 	ret = (abs_turns >= (float)LOWBYTE(cmd.p1));
-		
+	
+	if (ret && circle_started)
+	{
+		circle_started = false;
+		done_notend = false;
+	}
+
     return ret;
 }
 
