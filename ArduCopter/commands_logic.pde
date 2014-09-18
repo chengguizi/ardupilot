@@ -108,6 +108,8 @@ static bool start_command(const AP_Mission::Mission_Command& cmd)
     /// do commands
     ///
     case MAV_CMD_DO_CHANGE_SPEED:             // 178
+		hal.uartC->printf_P(PSTR("[DO CHANGE SPEED] = %f m/s\n"), cmd.content.speed.target_ms);
+		gcs_send_text_P(SEVERITY_HIGH, PSTR("Do change speed"));
         do_change_speed(cmd);
         break;
 
@@ -955,7 +957,7 @@ static bool do_guided(const AP_Mission::Mission_Command& cmd)
 
 static void do_change_speed(const AP_Mission::Mission_Command& cmd)
 {
-    if (cmd.content.speed.target_ms > 0) {
+    if (cmd.content.speed.target_ms > 0.0f) {
         wp_nav.set_speed_xy(cmd.content.speed.target_ms * 100.0f);
     }
 }

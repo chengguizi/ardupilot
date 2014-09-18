@@ -439,10 +439,10 @@ void AC_PosControl::set_accel_xy(float accel_cmss)
 ///     calc_leash_length_xy should be called afterwards
 void AC_PosControl::set_speed_xy(float speed_cms)
 {
-    if ((float)fabs(_speed_cms-speed_cms) > 1.0f) {
+   // if ((float)fabs(_speed_cms-speed_cms) > 1.0f) {
         _speed_cms = speed_cms;
         _flags.recalc_leash_xy = true;
-    }
+   // }
 }
 
 /// set_pos_target in cm from home
